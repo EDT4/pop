@@ -90,7 +90,7 @@ section
       let z := Limits.pushout px pr
       Fact31.mk
         (Limits.span xy xz)
-        sorry
+        (NatTrans.mk sorry sorry)
         sorry
         sorry
 
@@ -98,7 +98,6 @@ section
     def factor_r (m : s1 ⟶ s2) : Fact31 C m := sorry
 
     -- 3.4
-    -- TODO: inefficient implementation
     -- TODO: Finish graph morphisms above and make use of it here instead
     def zigzag (m : s1 ⟶ s2) : Seq (Span C) :=
       sequentialColimitByAlternating (s1 ⟶ s2) m sorry sorry -- TODO: give this some thought
