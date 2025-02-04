@@ -12,11 +12,13 @@ set_option autoImplicit true
 
 -- TODO: cleanup and organise later
 section
+  -- TODO: Look up if it is possible to specify implicit args and also if it is possible positionally
   variable (C : Type u) [Category.{v, u} C]
 
   -- TODO: Is this correct? It will probably be clear later
   section SequentialColimits
     abbrev Seq := Functor ℕ C -- TODO: What should this be called? Some kind of shape?
+    -- TODO: Does using an endofunctor work?
     def sequentialColimitByRepeat (z : C) (f : Functor C C) : Seq C :=
       let o (n : ℕ) : C := Nat.repeat f.obj n z
       let rec m {a b : ℕ} (ord : a ⟶ b) : o a ⟶ o b := match a , b with
@@ -25,7 +27,7 @@ section
         | Nat.succ x , Nat.succ y => f.map (m (CategoryTheory.homOfLE (Nat.le_of_succ_le_succ ord.le)))
       Functor.mk (Prefunctor.mk o m) sorry sorry
 
-    -- TODO: And how are the functors related to each other? Something related to Fact31 probably
+    -- TODO: And how are the functors related to each other? Something related to `Factor` probably
     def sequentialColimitByAlternating (z : C) (f g : Functor C C) : Seq C := sorry
 
     abbrev HasSequentialColimit(f : Seq C) := Limits.HasColimit f
@@ -55,19 +57,16 @@ section
     abbrev SpanMap.one   (m : s1 ⟶ s2) := m.app Limits.WalkingCospan.one
     abbrev SpanMap.right (m : s1 ⟶ s2) := m.app Limits.WalkingCospan.right
 
-    -- TODO: Probably no need to make this so explicit.
-    -- TODO: Also, there should probably be some nice shorter category theoretical way of expressing this
-    -- TODO: But wait, is this correctly formalised?
-    structure Fact31 (m : s1 ⟶ s2) where
-      span : Span C
-      m1 : s1 ⟶ span
-      m2 : span ⟶ s2
-      correct : m1 ≫ m2 = m
+    -- TODO: There should probably be some nice shorter category theoretical way of expressing this
+    structure Factor (f : a ⟶ b) where
+      common : C
+      left : a ⟶ common
+      right : common ⟶ b
+      correct : left ≫ right = f
 
-    -- TODO: not nice. improve later. maybe using something like squares
-    -- TODO: Also, look up if it is possible to specify implicit args and if it is possible positionally also
-    -- TODO: Maybe this would actually benefit from tactics
-    def factor_l (m : s1 ⟶ s2) : Fact31 C m := by
+    -- TODO: But wait, is this correctly formalised?
+    -- TODO: not nice. improve later. maybe using something like squares?
+    def factor_l (m : s1 ⟶ s2) : Factor (Span C) m := by
       let p := s1.obj Limits.WalkingSpan.zero
       let q := s1.obj Limits.WalkingSpan.left
       let r := s1.obj Limits.WalkingSpan.right
@@ -119,24 +118,12 @@ section
           | none => assumption
           | some j => cases j <;> assumption
 
-      -- Fact31.mk
-      --   (Limits.span xy xz)
-      --   (NatTrans.mk
-      --     (fun | Limits.WalkingSpan.left => sorry | Limits.WalkingSpan.zero => px | Limits.WalkingSpan.right => sorry)
-      --     sorry
-      --   )
-      --   sorry
-      --   sorry
-
     -- TODO: Similar to factor_l but find some more structure before writing this one
-    def factor_r (m : s1 ⟶ s2) : Fact31 C m := sorry
+    def factor_r (m : s1 ⟶ s2) : Factor (Span C) m := sorry
 
     -- 3.4
     -- TODO: Finish graph morphisms above and make use of it here instead
     def zigzag (m : s1 ⟶ s2) : Seq (Span C) :=
-      sequentialColimitByAlternating (s1 ⟶ s2) m sorry sorry -- TODO: give this some thought
-    -- def zigzag : (s1 ⟶ s2) → ℕ → Σ s1, Σ s2, Σ m : s1 ⟶ s2, Fact31 C m
-    --   | m , ℕ.zero   => Sigma.mk s1 $ Sigma.mk s2 $ Sigma.mk m _
-    --   | m , ℕ.succ n => factor_l ((factor_r ((zigzag m n).m2)).m2)
+      sequentialColimitByAlternating (Span C) s1 (Functor.mk _ _ _) sorry -- TODO: give this some thought
   end
 end
