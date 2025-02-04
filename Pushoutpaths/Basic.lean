@@ -67,32 +67,66 @@ section
     -- TODO: not nice. improve later. maybe using something like squares
     -- TODO: Also, look up if it is possible to specify implicit args and if it is possible positionally also
     -- TODO: Maybe this would actually benefit from tactics
-    def factor_l (m : s1 ⟶ s2) : Fact31 C m :=
-      let pq := s1.map Limits.WalkingSpan.Hom.fst
-      let pr := s1.map Limits.WalkingSpan.Hom.snd
-      let ab := s2.map Limits.WalkingSpan.Hom.fst
-      let ac := s2.map Limits.WalkingSpan.Hom.snd
+    def factor_l (m : s1 ⟶ s2) : Fact31 C m := by
+      let p := s1.obj Limits.WalkingSpan.zero
+      let q := s1.obj Limits.WalkingSpan.left
+      let r := s1.obj Limits.WalkingSpan.right
 
-      let qb := SpanMap.left  C m
-      let pa := SpanMap.one   C m
-      let rc := SpanMap.right C m
+      let a := s2.obj Limits.WalkingSpan.zero
+      let b := s2.obj Limits.WalkingSpan.left
+      let c := s2.obj Limits.WalkingSpan.right
 
-      let pqb_pab : pq ≫ qb = pa ≫ ab := sorry
-      let px := Limits.pullback.lift pq pa pqb_pab
-      let qy := CategoryStruct.id q
-      -- let rz := sorry
+      let pq : p ⟶ q := s1.map Limits.WalkingSpan.Hom.fst
+      let pr : p ⟶ r := s1.map Limits.WalkingSpan.Hom.snd
+      let ab : a ⟶ b := s2.map Limits.WalkingSpan.Hom.fst
+      let ac : a ⟶ c := s2.map Limits.WalkingSpan.Hom.snd
 
-      let xy := Limits.pullback.fst qb ab
-      let xz := Limits.pushout.inl px pr
+      let qb : q ⟶ b := SpanMap.left  C m
+      let pa : p ⟶ a := SpanMap.one   C m
+      let rc : r ⟶ c := SpanMap.right C m
 
       let x := Limits.pullback qb ab
       let y := q
+
+      let pqb_pab : pq ≫ qb = pa ≫ ab := sorry
+      let px : p ⟶ x := Limits.pullback.lift pq pa pqb_pab
+      let qy : q ⟶ y := CategoryStruct.id q
+
       let z := Limits.pushout px pr
-      Fact31.mk
-        (Limits.span xy xz)
-        (NatTrans.mk sorry sorry)
-        sorry
-        sorry
+      let rz : r ⟶ z := Limits.pushout.inr px pr
+
+      let xy : x ⟶ y := Limits.pullback.fst qb ab
+      let xz : x ⟶ z := Limits.pushout.inl px pr
+
+      let xa : x ⟶ a := Limits.pullback.snd qb ab
+      let yb : y ⟶ b := qb
+      let pac_prc : px ≫ (xa ≫ ac) = pr ≫ rc := sorry
+      let zc : z ⟶ c := Limits.pushout.desc (xa ≫ ac) rc pac_prc
+
+      constructor
+      . sorry
+      . exact Limits.span xy xz
+      . constructor
+        · sorry
+        · intro i
+          cases i with
+          | none => assumption
+          | some j => cases j <;> assumption
+      . constructor
+        · sorry
+        · intro i
+          cases i with
+          | none => assumption
+          | some j => cases j <;> assumption
+
+      -- Fact31.mk
+      --   (Limits.span xy xz)
+      --   (NatTrans.mk
+      --     (fun | Limits.WalkingSpan.left => sorry | Limits.WalkingSpan.zero => px | Limits.WalkingSpan.right => sorry)
+      --     sorry
+      --   )
+      --   sorry
+      --   sorry
 
     -- TODO: Similar to factor_l but find some more structure before writing this one
     def factor_r (m : s1 ⟶ s2) : Fact31 C m := sorry
