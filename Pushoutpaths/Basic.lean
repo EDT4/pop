@@ -1,9 +1,13 @@
 import Init.Core
 import Init.Prelude
+import Mathlib.CategoryTheory.Adjunction.Basic
+import Mathlib.CategoryTheory.Adjunction.Reflective
+import Mathlib.CategoryTheory.Monad.Adjunction
 import Mathlib.CategoryTheory.Category.Preorder
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Cospan
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.PullbackCone
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
+import Mathlib.CategoryTheory.Whiskering
 -- import Mathlib.CategoryTheory.Limits.Shapes.Pushout.HasPushout
 
 namespace CategoryTheory
@@ -19,7 +23,8 @@ section
   section SequentialColimits
     abbrev Seq := Functor ℕ C -- TODO: What should this be called? Some kind of shape?
     -- TODO: Does using an endofunctor work?
-    def sequentialColimitByRepeat (z : C) (f : Functor C C) : Seq C :=
+    -- TODO: Wait, is this not just reproving that the reflexive-transitive closure of a graph is a category?
+    def seqByRepeat (z : C) (f : Functor C C) : Seq C :=
       let o (n : ℕ) : C := Nat.repeat f.obj n z
       let rec m {a b : ℕ} (ord : a ⟶ b) : o a ⟶ o b := match a , b with
         | Nat.zero   , Nat.zero   => CategoryStruct.id z
@@ -27,10 +32,11 @@ section
         | Nat.succ x , Nat.succ y => f.map (m (CategoryTheory.homOfLE (Nat.le_of_succ_le_succ ord.le)))
       Functor.mk (Prefunctor.mk o m) sorry sorry
 
-    -- TODO: And how are the functors related to each other? Something related to `Factor` probably
-    def sequentialColimitByAlternating (z : C) (f g : Functor C C) : Seq C := sorry
+    -- TODO: And how are the functors related to each other? Something related to `Factor` probably, but is this approach working?
+    def seqByAlternating (z : C) (f g : Functor C C) : Seq C := sorry
 
     abbrev HasSequentialColimit(f : Seq C) := Limits.HasColimit f
+    abbrev seqColim (f : Seq C) [HasSequentialColimit C f] := Limits.colimit f
   end SequentialColimits
 
   variable [∀{X Y Z : C}{f : X ⟶ Z}{g : Y ⟶ Z}, Limits.HasPullback f g]
@@ -124,6 +130,34 @@ section
     -- 3.4
     -- TODO: Finish graph morphisms above and make use of it here instead
     def zigzag (m : s1 ⟶ s2) : Seq (Span C) :=
-      sequentialColimitByAlternating (Span C) s1 (Functor.mk _ _ _) sorry -- TODO: give this some thought
+      seqByAlternating (Span C) s1 (Functor.mk _ _ _) sorry -- TODO: give this some thought
   end
+
+
+
+
+  -- variable (A B : Type u) [Category.{v, u} A] [Category.{v, u} B]
+  -- variable {F : Functor A C} {G : Functor B C}
+  -- variable [Reflective F] [Reflective G]
+
+  -- TODO: Something is probably incorrect here
+  def lem1 -- TODO: Universes? Use variable instead later
+    {C A B : Type u} [Category.{v, u} C] [Category.{v, u} A] [Category.{v, u} B]
+    (F : Functor A C) [Reflective F]
+    (G : Functor B C) [Reflective G]
+    [∀{f}, HasSequentialColimit C f]
+    : sorry := -- Σ S : Type u, Σ Category S, Σ H : Functor S C, Reflective H
+      let ηA := (reflectorAdjunction F).unit
+      let ηB := (reflectorAdjunction G).unit
+      let TA : Functor C C := Adjunction.toMonad (reflectorAdjunction F)
+      let TB : Functor C C := Adjunction.toMonad (reflectorAdjunction G)
+      -- TODO: Is M a functor? But maybe that would not help
+      let rec M : ℕ → Functor C C := fun n => match n with -- TODO: Is this ok or is it easier with even/odd?
+        | 0     => Functor.id C
+        | 1     => TB
+        | n + 2 => Functor.comp TB (Functor.comp TA (M n))
+      -- TODO: should probably try to define M and Msucc simultaneously in some way?
+      let Msucc (n : ℕ) := whiskerRight ηA (M n) -- TODO: ?   -- : M n ⟶ M (Nat.succ n)
+      -- let Minf := seqColim C (seqByRepeat C _ _) -- TODO: Something about the definition of seqcolim is probably weird?
+      sorry
 end
