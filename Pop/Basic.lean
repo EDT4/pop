@@ -20,12 +20,12 @@ set_option autoImplicit true
 -- TODO: cleanup and organise later
 section
   -- TODO: Look up if it is possible to specify implicit args and also if it is possible positionally
-  variable (C : Type u) [Category.{v, u} C]
+  variable {A B C : Type u} [Category.{v, u} C]
 
   -- TODO: Is this correct? It will probably be clear later
   -- TODO: Lookup cofiltered category and tower diagrams
   section SequentialColimits
-    abbrev SeqDiagram := Functor ℕ C
+    abbrev SeqDiagram (C : Type u) [Category.{v, u} C] := Functor ℕ C
 
     def seqByRepeat (f : Functor C C) (z : C) (zm : z ⟶ f.obj z) : SeqDiagram C :=
       let o (n : ℕ) : C := Nat.repeat f.obj n z
@@ -36,19 +36,15 @@ section
 
     -- TODO: Pointed endofunctor (NatTrans (Functor.id C) f) instead of zm, but what would the naturality give?
     def seqByRepeat' (f : Functor C C) (m : NatTrans (Functor.id C) f) (z : C) : SeqDiagram C :=
-      seqByRepeat C f z (m.app z)
-
-    -- TODO: And how are the functors related to each other? Something related to `Factor` probably, but is this approach working?
-    def seqByAlternation (f g : Functor C C) (z : C) (zm : z ⟶ f.obj (g.obj z)) : SeqDiagram C :=
-      seqByRepeat C (Functor.comp g f) z zm
+      seqByRepeat f z (m.app z)
 
     abbrev HasSequentialColimit(f : SeqDiagram C) := HasColimit f
-    noncomputable abbrev seqColim (f : SeqDiagram C) [HasSequentialColimit C f] := colimit f
+    noncomputable abbrev seqColim (f : SeqDiagram C) [HasSequentialColimit f] := colimit f
   end SequentialColimits
 
   variable [∀{X Y Z : C}{f : X ⟶ Z}{g : Y ⟶ Z}, HasPullback f g]
   variable [∀{X Y Z : C}{f : X ⟶ Y}{g : X ⟶ Z}, HasPushout f g]
-  variable [∀{f}, HasSequentialColimit C f]
+  variable [∀{f : SeqDiagram C}, HasSequentialColimit f]
 
   section
     -- 2.9
@@ -57,7 +53,7 @@ section
 
   section
     -- 3.1
-    abbrev Span := Functor WalkingSpan C
+    abbrev Span (C : Type u) [Category.{v, u} C] := Functor WalkingSpan C
 
     variable {p q r : C} {pq : p ⟶ q} {pr : p ⟶ r}
     variable {a b c : C} {ab : a ⟶ b} {ac : a ⟶ c}
@@ -77,7 +73,7 @@ section
       right : common ⟶ b
       correct : left ≫ right = f
 
-    def factor_l (m : s1 ⟶ s2) : Factor (Span C) m :=
+    noncomputable def factor_l (m : s1 ⟶ s2) : Factor m :=
       let p := s1.obj WalkingSpan.zero
       let q := s1.obj WalkingSpan.left
       let r := s1.obj WalkingSpan.right
@@ -93,9 +89,9 @@ section
 
       -- let test := s1.map
 
-      let qb : q ⟶ b := SpanMap.left  C m
-      let pa : p ⟶ a := SpanMap.one   C m
-      let rc : r ⟶ c := SpanMap.right C m
+      let qb : q ⟶ b := SpanMap.left  m
+      let pa : p ⟶ a := SpanMap.one   m
+      let rc : r ⟶ c := SpanMap.right m
 
       let x := pullback qb ab
       let y := q
@@ -131,18 +127,18 @@ section
             . simp ; sorry
           )
       , right := .mk
-          (by rintro (_ | _ | _) <;> assumption) -- (by intro i ; rcases i with _ | _ | _ <;> assumption)
+          (by rintro (_ | _ | _) <;> assumption)
           sorry
       , correct := sorry
       }
 
-    def factor_l' (o1 : Over s) : Σ o2, o1 ⟶ o2 :=
-      let fa := factor_l C o1.hom
+    noncomputable def factor_l' (o1 : Over s) : Σ o2, o1 ⟶ o2 :=
+      let fa := factor_l o1.hom
       Sigma.mk (Over.mk fa.right) (Over.homMk fa.left fa.correct)
 
     -- TODO: Not sure if this is helping. How is it an endofunctor?
-    def factor_l'' (o : Over s) : Under o :=
-      let fa := factor_l C o.hom
+    noncomputable def factor_l'' (o : Over s) : Under o :=
+      let fa := factor_l o.hom
       Under.mk (Y := Over.mk fa.right) (Over.homMk fa.left fa.correct)
 
     -- TODO: Like this?
@@ -162,38 +158,52 @@ section
     --     . exact fun o => (factor_l' C o).1
 
     -- TODO: Similar to factor_l but find some more structure before writing this one
-    def factor_r (m : s1 ⟶ s2) : Factor (Span C) m := sorry
+    noncomputable def factor_r (m : s1 ⟶ s2) : Factor m := sorry
 
     -- 3.4
     -- TODO: Finish graph morphisms above and make use of it here instead
     def zigzag (m : s1 ⟶ s2) : SeqDiagram (Over s2) :=
-      seqByRepeat (Over s2) (Over.map _) sorry sorry -- TODO: give this some thought
+      seqByRepeat (C := Over s2) (Over.map sorry) sorry sorry -- TODO: give this some thought
   end
 
 
 
 
-  -- variable (A B : Type u) [Category.{v, u} A] [Category.{v, u} B]
-  -- variable {F : Functor A C} {G : Functor B C}
-  -- variable [Reflective F] [Reflective G]
 
-  -- TODO: Something is probably incorrect here
-  def lem1 -- TODO: Universes? Use variable instead later
-    {C A B : Type u} [Category.{v, u} C] [Category.{v, u} A] [Category.{v, u} B]
-    (F : Functor A C) [Reflective F]
-    (G : Functor B C) [Reflective G]
-    [∀{f}, HasSequentialColimit C f]
-    : sorry := -- Σ S : Type u, Σ Category S, Σ H : Functor S C, Reflective H
-      let ηA := (reflectorAdjunction F).unit
-      let ηB := (reflectorAdjunction G).unit
-      let TA : Functor C C := Adjunction.toMonad (reflectorAdjunction F)
-      let TB : Functor C C := Adjunction.toMonad (reflectorAdjunction G)
-      -- TODO: Is M a functor? But maybe that would not help
-      let rec M : ℕ → Functor C C := fun n => match n with -- TODO: Is this ok or is it easier with even/odd?
-        | 0     => Functor.id C
-        | n + 1 => Functor.comp TB (Functor.comp TA (M n))
-      -- TODO: should probably try to define M and Msucc simultaneously in some way?
-      let Msucc (n : ℕ) := whiskerRight ηA (M n) -- TODO: ?   -- : M n ⟶ M (Nat.succ n)
-      let Minf := seqColim (Functor C C) (seqByRepeat (Functor C C) (Functor.comp (Functor.comp TB TA)) sorry sorry) -- TODO: Something about the definition of seqcolim is probably weird?
-      sorry
+  section
+    -- variable [∀{f : SeqDiagram C}, HasSequentialColimit f]
+    variable [∀{f : SeqDiagram (Functor C C)}, HasSequentialColimit f] -- TODO: temporary
+    variable [Category.{v, u} A]
+    variable [Category.{v, u} B]
+
+    def lem1
+      (F : Functor A C) [Reflective F]
+      (G : Functor B C) [Reflective G]
+      : sorry := -- TODO: ?    Σ S : Type u, Σ Category S, Σ H : Functor S C, Reflective H
+        let ηA := (reflectorAdjunction F).unit
+        let ηB := (reflectorAdjunction G).unit
+        let TA : Functor C C := Adjunction.toMonad (reflectorAdjunction F)
+        let TB : Functor C C := Adjunction.toMonad (reflectorAdjunction G)
+        -- (Functor.comp (Functor.comp TB TA))
+        let Mzero := Functor.id C
+        -- let Msucc := .mk
+        --   (.mk
+        --     (fun f => Functor.comp f (Functor.comp TB TA))
+        --     (fun f => by simp ; sorry)
+        --   )
+        --   sorry
+        --   sorry
+        -- let test := whiskerRight ηA TA
+        -- let Msucc := .mk
+        --   (.mk
+        --     (fun f => Functor.comp f TA)
+        --     (fun f => whiskerRight f TA)
+        --   )
+        --   sorry
+        --   sorry
+        let MsuccA := (whiskeringRight C C C).obj TA
+        let MsuccB := (whiskeringRight C C C).obj TB
+        let Minf := seqColim (C := Functor C C) (seqByRepeat (C := Functor C C) (Functor.comp MsuccB MsuccA) Mzero (.mk sorry))
+        sorry
+  end
 end
