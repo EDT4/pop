@@ -2,6 +2,8 @@ import Init.Core
 import Init.Prelude
 import Mathlib.CategoryTheory.Adjunction.Basic
 import Mathlib.CategoryTheory.Adjunction.Reflective
+import Mathlib.CategoryTheory.Category.Cat
+import Mathlib.CategoryTheory.Category.Cat.Limit
 import Mathlib.CategoryTheory.Category.Preorder
 import Mathlib.CategoryTheory.Functor.OfSequence
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Cospan
@@ -22,7 +24,7 @@ section
   -- TODO: Look up if it is possible to specify implicit args and also if it is possible positionally
   variable {A B C : Type u} [Category.{v, u} C]
 
-  -- TODO: Is this correct? It will probably be clear later
+  -- TODO: Is this correct? It will probably be more clear later
   -- TODO: Lookup cofiltered category and tower diagrams
   section SequentialColimits
     abbrev SeqDiagram (C : Type u) [Category.{v, u} C] := Functor ℕ C
@@ -73,6 +75,7 @@ section
       right : common ⟶ b
       correct : left ≫ right = f
 
+    -- TODO: Able to specify the limits => computable
     noncomputable def factor_l (m : s1 ⟶ s2) : Factor m :=
       let p := s1.obj WalkingSpan.zero
       let q := s1.obj WalkingSpan.left
@@ -170,40 +173,33 @@ section
 
 
 
+
+  instance instHasSequentialColimitEndofunctor
+    : [∀{f : SeqDiagram C}, HasSequentialColimit f]
+    → (∀{f : SeqDiagram (Functor C C)}, HasSequentialColimit f)
+    := sorry
+
   section
-    -- variable [∀{f : SeqDiagram C}, HasSequentialColimit f]
-    variable [∀{f : SeqDiagram (Functor C C)}, HasSequentialColimit f] -- TODO: temporary
+    variable [∀{f : SeqDiagram C}, HasSequentialColimit f]
     variable [Category.{v, u} A]
     variable [Category.{v, u} B]
 
+    open CategoryTheory.Cat
+
     def lem1
-      (F : Functor A C) [Reflective F]
+      (F : Functor A C) [Reflective F] -- TODO: express closed under sequential colimit
       (G : Functor B C) [Reflective G]
-      : sorry := -- TODO: ?    Σ S : Type u, Σ Category S, Σ H : Functor S C, Reflective H
+      : sorry := -- Σ H : Functor (pullback F G) C, Reflective H :=  TODO. maybe not like this
+        -- let test := pullback (C := Cat) (X := Cat.of A) (Y := Cat.of B) (Z := Cat.of C) F G -- TODO: CategoryTheory.Cat.instHasLimits not working for this?
         let ηA := (reflectorAdjunction F).unit
         let ηB := (reflectorAdjunction G).unit
         let TA : Functor C C := Adjunction.toMonad (reflectorAdjunction F)
         let TB : Functor C C := Adjunction.toMonad (reflectorAdjunction G)
-        -- (Functor.comp (Functor.comp TB TA))
-        let Mzero := Functor.id C
-        -- let Msucc := .mk
-        --   (.mk
-        --     (fun f => Functor.comp f (Functor.comp TB TA))
-        --     (fun f => by simp ; sorry)
-        --   )
-        --   sorry
-        --   sorry
-        -- let test := whiskerRight ηA TA
-        -- let Msucc := .mk
-        --   (.mk
-        --     (fun f => Functor.comp f TA)
-        --     (fun f => whiskerRight f TA)
-        --   )
-        --   sorry
-        --   sorry
+        let Mzero  := Functor.id C
         let MsuccA := (whiskeringRight C C C).obj TA
         let MsuccB := (whiskeringRight C C C).obj TB
-        let Minf := seqColim (C := Functor C C) (seqByRepeat (C := Functor C C) (Functor.comp MsuccB MsuccA) Mzero (.mk sorry))
+        let Msucc  := Functor.comp MsuccB MsuccA
+        let Minf   := seqColim (seqByRepeat' Msucc (.mk sorry) Mzero)
         sorry
   end
 end
