@@ -10,8 +10,10 @@ import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Cospan
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.PullbackCone
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
 import Mathlib.CategoryTheory.Monad.Adjunction
+import Mathlib.CategoryTheory.Monad.Limits
 import Mathlib.CategoryTheory.Comma.Over
 import Mathlib.CategoryTheory.Whiskering
+import Mathlib.Combinatorics.Quiver.Basic
 -- import Mathlib.CategoryTheory.Limits.Shapes.Pushout.HasPushout
 
 open CategoryTheory
@@ -22,31 +24,109 @@ set_option autoImplicit true
 -- TODO: cleanup and organise later
 section
   -- TODO: Look up if it is possible to specify implicit args and also if it is possible positionally
-  variable {A B C : Type u} [Category.{v, u} C]
+  variable {A B C : Type u}
+  variable [Category.{v, u} A]
+  variable [Category.{v, u} B]
+  variable [Category.{v, u} C]
 
   -- TODO: Is this correct? It will probably be more clear later
   -- TODO: Lookup cofiltered category and tower diagrams
-  section SequentialColimits
+  section namespace CategoryTheory.Limits.Shapes.SeqColimit
     abbrev SeqDiagram (C : Type u) [Category.{v, u} C] := Functor ℕ C
 
-    def seqByRepeat (f : Functor C C) (z : C) (zm : z ⟶ f.obj z) : SeqDiagram C :=
+    def SeqDiagram.bySequence (f : ℕ → C) (m : (n : ℕ) → f n ⟶ f (Nat.succ n)) : SeqDiagram C
+      := Functor.ofSequence m
+
+    def SeqDiagram.byRepeat (f : Functor C C) (z : C) (zm : z ⟶ f.obj z) : SeqDiagram C :=
       let o (n : ℕ) : C := Nat.repeat f.obj n z
       let rec m (n : ℕ) : o n ⟶ o (n + 1) := match n with
         | Nat.zero   => zm
         | Nat.succ n => f.map (m n)
-      Functor.ofSequence m
+      SeqDiagram.bySequence o m
 
     -- TODO: Pointed endofunctor (NatTrans (Functor.id C) f) instead of zm, but what would the naturality give?
-    def seqByRepeat' (f : Functor C C) (m : NatTrans (Functor.id C) f) (z : C) : SeqDiagram C :=
-      seqByRepeat f z (m.app z)
+    def SeqDiagram.byRepeat' (f : Functor C C) (m : NatTrans (Functor.id C) f) (z : C) : SeqDiagram C :=
+      SeqDiagram.byRepeat f z (m.app z)
 
-    abbrev HasSequentialColimit(f : SeqDiagram C) := HasColimit f
-    noncomputable abbrev seqColim (f : SeqDiagram C) [HasSequentialColimit f] := colimit f
-  end SequentialColimits
+    section namespace BySequence
+      variable (so : ℕ → C)
+      variable (sm : (n : ℕ) → so n ⟶ so (Nat.succ n))
+
+      lemma map_id (n : ℕ) (o : n ⟶ n) : (SeqDiagram.bySequence so sm).map o = CategoryStruct.id (so n)
+        := by
+          rewrite [Subsingleton.elim o (homOfLE (by omega))]
+          exact Functor.OfSequence.map_id sm n
+
+      lemma map_comp (a b c : ℕ) (o1 : a ⟶ b) (o2 : b ⟶ c) (o3 : a ⟶ c) : (SeqDiagram.bySequence so sm).map o3 = (SeqDiagram.bySequence so sm).map o1 ≫ (SeqDiagram.bySequence so sm).map o2
+        := Functor.OfSequence.map_comp sm a b c (leOfHom o1) (leOfHom o2)
+
+      lemma map_succ (n : ℕ) (o : n ⟶ Nat.succ n) : (SeqDiagram.bySequence so sm).map o = sm n
+        := by
+          rewrite [Subsingleton.elim o (homOfLE (Nat.le_add_right n 1))]
+          exact Functor.OfSequence.map_le_succ sm n
+
+      abbrev SeqColimCocone := Cocone (SeqDiagram.bySequence so sm)
+      def SeqColimCocone.mk
+        {W : C}
+        (p : (n : ℕ) → so n ⟶ W)
+        (eq : ∀(n : ℕ), sm n ≫ p (Nat.succ n) = p n)
+        : SeqColimCocone so sm where
+        pt := W
+        ι :=
+          let e := by
+            intro n
+            simp
+            rewrite [map_succ so sm n (homOfLE (by omega))]
+            exact eq n
+          NatTrans.ofSequence (F := SeqDiagram.bySequence so sm) (G := (Functor.const ℕ).obj W) p e
+        -- ι := {
+        --   app := p
+        --   naturality :=
+        --     let rec impl
+        --     | Nat.zero   , Nat.zero   , o => by
+        --       -- simp_all!
+        --       rewrite [map_id so sm Nat.zero o]
+        --       rewrite [Category.id_comp (p 0)]
+        --       simp
+        --     | Nat.zero   , Nat.succ b , o => by
+        --       let o' : 0 ⟶ b     := homOfLE (by omega)
+        --       let os : b ⟶ b + 1 := homOfLE (by omega)
+        --       rewrite [map_comp so sm 0 b (b + 1) o' os o]
+        --       rewrite [Category.assoc ((SeqDiagram.bySequence so sm).map o') ((SeqDiagram.bySequence so sm).map os) (p (b + 1))]
+        --       rewrite [map_succ so sm b os]
+        --       rewrite [eq b]
+        --       rewrite [impl Nat.zero b o']
+        --       simp
+        --     | Nat.succ a , Nat.succ b , o => by
+        --       simp
+        --       let test := impl a b sorry
+        --       -- let test2 := (NatTrans.ofSequence (C := C) (F := sorry) (G := sorry) sorry sorry)
+        --       sorry
+        --     impl
+        -- }
+    end BySequence
+
+    abbrev HasSeqColimit(f : SeqDiagram C) := HasColimit f
+    noncomputable abbrev seqColim (f : SeqDiagram C) [HasSeqColimit f] := colimit f
+
+    noncomputable abbrev seqColim.ι (f : SeqDiagram C) [HasSeqColimit f] (n : ℕ)
+      : f.obj n ⟶ seqColim f
+      := colimit.ι f n
+
+    noncomputable abbrev seqColim.desc (f : SeqDiagram C) [HasSeqColimit f] (n : ℕ)
+      : seqColim f ⟶ _
+      := colimit.desc f (Cocone.mk f _)
+
+  end
+
+
+
+
+  open CategoryTheory.Limits.Shapes.SeqColimit
 
   variable [∀{X Y Z : C}{f : X ⟶ Z}{g : Y ⟶ Z}, HasPullback f g]
   variable [∀{X Y Z : C}{f : X ⟶ Y}{g : X ⟶ Z}, HasPushout f g]
-  variable [∀{f : SeqDiagram C}, HasSequentialColimit f]
+  variable [∀{f : SeqDiagram C}, HasSeqColimit f]
 
   section
     -- 2.9
@@ -166,7 +246,7 @@ section
     -- 3.4
     -- TODO: Finish graph morphisms above and make use of it here instead
     def zigzag (m : s1 ⟶ s2) : SeqDiagram (Over s2) :=
-      seqByRepeat (C := Over s2) (Over.map sorry) sorry sorry -- TODO: give this some thought
+      SeqDiagram.byRepeat (C := Over s2) (Over.map sorry) sorry sorry -- TODO: give this some thought
   end
 
 
@@ -174,25 +254,31 @@ section
 
 
 
-  instance instHasSequentialColimitEndofunctor
-    : [∀{f : SeqDiagram C}, HasSequentialColimit f]
-    → (∀{f : SeqDiagram (Functor C C)}, HasSequentialColimit f)
+
+  instance instHasSeqColimitEndofunctor
+    : [∀{f : SeqDiagram C}, HasSeqColimit f]
+    → (∀{f : SeqDiagram (Functor C C)}, HasSeqColimit f)
     := sorry
 
+  -- TODO: Reflective subcategories probably preserve the property of having limits?
+  -- theorem instHasSeqColimit_of_reflective
+  --   {F : Functor A B} [Reflective F]
+  --   : [∀{f : SeqDiagram B}, HasSeqColimit f]
+  --   → (∀{f : SeqDiagram A}, HasSeqColimit f)
+  --   := hasColimitsOfShape_of_reflective _
+
   section
-    variable [∀{f : SeqDiagram C}, HasSequentialColimit f]
-    variable [Category.{v, u} A]
-    variable [Category.{v, u} B]
+    variable [∀{f : SeqDiagram C}, HasSeqColimit f]
+    -- variable [∀{f : SeqDiagram A}, HasSeqColimit f]
+    -- variable [∀{f : SeqDiagram B}, HasSeqColimit f]
+    variable [HasLimits Cat] -- TODO: CategoryTheory.Cat.instHasLimits?
 
-    open CategoryTheory.Cat
-
+    -- ∀{f : SeqDiagram C}, (∀{x}, f x in A) → (seqColim f in A)
+    -- ∀{f : SeqDiagram A}, F.obj (seqColim f) = seqColim (Functor.comp f F)
     def lem1
-      (F : Functor A C) [Reflective F] -- TODO: express closed under sequential colimit
+      (F : Functor A C) [Reflective F]
       (G : Functor B C) [Reflective G]
-      : sorry := -- Σ H : Functor (pullback F G) C, Reflective H :=  TODO. maybe not like this
-        -- let test := pullback (C := Cat) (X := Cat.of A) (Y := Cat.of B) (Z := Cat.of C) F G -- TODO: CategoryTheory.Cat.instHasLimits not working for this?
-        let ηA := (reflectorAdjunction F).unit
-        let ηB := (reflectorAdjunction G).unit
+      : Σ H : Functor (pullback (C := Cat) (X := Cat.of A) (Y := Cat.of B) (Z := Cat.of C) F G) C, Reflective H :=
         let TA : Functor C C := Adjunction.toMonad (reflectorAdjunction F)
         let TB : Functor C C := Adjunction.toMonad (reflectorAdjunction G)
         let Mzero  := Functor.id C
@@ -200,6 +286,16 @@ section
         let MsuccB := (whiskeringRight C C C).obj TB
         let Msucc  := Functor.comp MsuccB MsuccA
         let Minf   := seqColim (seqByRepeat' Msucc (.mk sorry) Mzero)
-        sorry
+
+        .mk
+          (.mk
+            (.mk
+              sorry
+              sorry
+            )
+            sorry
+            sorry
+          )
+          sorry
   end
 end
