@@ -206,3 +206,5 @@ section
           sorry
   end
 end
+
+-- TODO: Old references before code removal: https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Bicategory/Basic.html https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Comma/Basic.html#CategoryTheory.Comma
