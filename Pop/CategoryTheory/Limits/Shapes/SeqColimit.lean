@@ -19,7 +19,7 @@ structure Seq (C : Type u) [Category.{v, u} C] where
   obj : ℕ → C
   map : (n : ℕ) → obj n ⟶ obj (Nat.succ n)
 namespace Seq
-  abbrev const (c : C) : Seq C := .mk (fun _ => c) (fun _ => CategoryStruct.id c)
+  abbrev const (c : C) : Seq C := .mk (fun _ => c) (fun _ => 𝟙 c)
   abbrev step (s : Seq C) : Seq C := .mk (s.obj ∘ Nat.succ) (fun n => s.map (Nat.succ n))
   abbrev Diagram (C : Type u) [Category.{v, u} C] := Functor ℕ C
   abbrev diagram (s : Seq C) : Seq.Diagram C := Functor.ofSequence s.map
@@ -31,13 +31,16 @@ namespace Seq
       | Nat.succ n => f.map (m n)
     .mk o m
 
+  lemma step_const (c : C) : (const c).step = const c
+    := rfl
+
   -- TODO: Pointed endofunctor (NatTrans (Functor.id C) f) instead of zm, but what would the naturality give?
   def byRepeat' (f : Functor C C) (m : NatTrans (Functor.id C) f) (z : C) : Seq C :=
     byRepeat f (.mk z (m.app z))
 
   variable (s : Seq C)
 
-  lemma diagram_map_id {n : ℕ} (o : n ⟶ n) : s.diagram.map o = CategoryStruct.id (s.obj n)
+  lemma diagram_map_id {n : ℕ} (o : n ⟶ n) : s.diagram.map o = 𝟙 (s.obj n)
     := by
       rewrite [Subsingleton.elim o (homOfLE (by omega))]
       exact Functor.OfSequence.map_id s.map n
@@ -49,6 +52,59 @@ namespace Seq
     := by
       rewrite [Subsingleton.elim o (homOfLE (Nat.le_add_right n 1))]
       exact Functor.OfSequence.map_le_succ s.map n
+
+  lemma diagram_map_succ_is_comp_map (a b : ℕ) {o1 : a ⟶ b.succ} {o2 : a ⟶ b} : s.diagram.map o1 = s.diagram.map o2 ≫ s.map b
+    := by rw [diagram_map_comp s o2 (homOfLE (by omega)) o1 , diagram_map_is_map s b]
+
+  lemma diagram_map_succ_is_step (a b : ℕ) {o1 : a.succ ⟶ b.succ} {o2 : a ⟶ b} : s.diagram.map o1 = s.step.diagram.map o2
+    := by rfl
+
+  -- TODO: This proof works in general (s.diagram.map o = f o) when (s.step = s) and (s.map _ = f _)?
+  lemma diagram_map_const {a b : ℕ} (c : C) (o : a ⟶ b) : (Seq.const c).diagram.map o = 𝟙 c
+    := by
+      simp [const , diagram]
+      let rec i a b (o : a ⟶ b) : (Functor.ofSequence fun x ↦ 𝟙 c).map o = 𝟙 c := match a , b with
+        | 0 , 0 => rfl
+        | 0 , Nat.succ b => by
+          rewrite [diagram_map_succ_is_comp_map (Seq.const c) 0 b (o1 := o) (o2 := homOfLE (by omega))]
+          rewrite [i 0 b (homOfLE (by omega))]
+          aesop_cat
+        | Nat.succ a , Nat.succ b => by
+          let o' : a ⟶ b :=
+            let _ := leOfHom o
+            homOfLE (by omega)
+          rewrite [diagram_map_succ_is_step (Seq.const c) a b (o1 := o) (o2 := o')]
+          simp [Seq.step_const c]
+          rw [i a b o']
+      exact i a b o
+
+  lemma diagram_map_ext
+    (f : {a b : ℕ} → (a ⟶ b) → (s.obj a ⟶ s.obj b))
+    (fid : ∀{n : ℕ}{o : n ⟶ n}, f o = 𝟙 (s.obj n))
+    (fsucc : ∀{a b : ℕ}{o1 : a ⟶ b}{o2 : a ⟶ b.succ}, f o1 ≫ s.map b = f o2)
+    (fstep : ∀{a b : ℕ}{o1 : a ⟶ b}{o2 : a.succ ⟶ b.succ}, (s.diagram.map o1 = f o1) → (s.step.diagram.map o1 = f o2))
+    : ∀{a b : ℕ} (o : a ⟶ b), s.diagram.map o = f o
+    := by
+      simp [const , diagram]
+      let rec i a b (o : a ⟶ b) : (Functor.ofSequence s.map).map o = f o := match a , b with
+        | 0 , 0 => by simp [diagram_map_id , fid]
+        | 0 , Nat.succ b => by
+          rewrite [diagram_map_succ_is_comp_map s 0 b (o1 := o) (o2 := homOfLE (by omega))]
+          rewrite [i 0 b (homOfLE (by omega))]
+          apply fsucc
+        | Nat.succ a , Nat.succ b => by
+          let o' : a ⟶ b :=
+            let _ := leOfHom o
+            homOfLE (by omega)
+          rewrite [diagram_map_succ_is_step s a b (o1 := o) (o2 := o')]
+          exact fstep (i a b o')
+      intro a b
+      exact i a b
+
+  lemma diagram_const {c : C} : (Seq.const c).diagram = (Functor.const ℕ).obj c := by
+    simp [Functor.ofSequence , Functor.const]
+    ext i j o
+    exact diagram_map_const c o
 
   abbrev Morphism (s1 s2 : Seq C) := NatTrans s1.diagram s2.diagram
   namespace Morphism
@@ -107,21 +163,26 @@ variable {eq : ∀(n : ℕ), s.map n ≫ p (Nat.succ n) = p n}
 
 -- Follows the structure of https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Shapes/Pullback/PullbackCone.html
 abbrev SeqColimCocone := Cocone s.diagram
-namespace SeqColimCocone -- TODO: Use Morphism
+namespace SeqColimCocone
   variable {s : Seq C}
   variable {t : SeqColimCocone s}
 
+  -- It could be using Seq.Morphism.mk, but it is not.
   def mk
     (p : (n : ℕ) → s.obj n ⟶ W) -- TODO: Is it really enough when W is not dependent on n?
     (eq : ∀(n : ℕ), s.map n ≫ p (Nat.succ n) = p n)
     : SeqColimCocone s where
     pt := W
-    ι :=
-      let e := by
-        intro n
-        simp
-        exact eq n
-      NatTrans.ofSequence (F := s.diagram) (G := (Functor.const ℕ).obj W) p e
+    ι := NatTrans.ofSequence (F := s.diagram) (G := (Functor.const ℕ).obj W) p (by
+      intro n
+      rewrite [Seq.diagram_map_is_map]
+      simp [eq]
+    )
+    -- by -- An alternative construction by tactics. Unpreferable due to a different more complicated reduct.
+    --   simp [Seq.diagram_const.symm]
+    --   apply Seq.Morphism.mk (s1 := s) (s2 := Seq.const W) p
+    --   simp [Seq.diagram_const.symm]
+    --   exact eq
 
   abbrev ι (t : SeqColimCocone s) (n : ℕ) : s.obj n ⟶ t.pt
     := (Cocone.ι t).app n
