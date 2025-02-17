@@ -32,11 +32,11 @@ section
 
   variable [∀{X Y Z : C}{f : X ⟶ Z}{g : Y ⟶ Z}, HasPullback f g]
   variable [∀{X Y Z : C}{f : X ⟶ Y}{g : X ⟶ Z}, HasPushout f g]
-  variable [∀{f : SeqDiagram C}, HasSeqColimit f]
+  variable [∀{s : Seq C}, HasSeqColimit s]
 
   instance instHasSeqColimitEndofunctor
-    : [∀{f : SeqDiagram C}, HasSeqColimit f]
-    → (∀{f : SeqDiagram (Functor C C)}, HasSeqColimit f)
+    : [∀{s : Seq C}, HasSeqColimit s]
+    → (∀{s : Seq (Functor C C)}, HasSeqColimit s)
     := sorry
 
   -- TODO: Reflective subcategories probably preserve the property of having limits?
@@ -47,16 +47,16 @@ section
   --   := hasColimitsOfShape_of_reflective _
 
   section
-    variable [∀{f : SeqDiagram C}, HasSeqColimit f]
-    -- variable [∀{f : SeqDiagram A}, HasSeqColimit f]
-    -- variable [∀{f : SeqDiagram B}, HasSeqColimit f]
+    variable [∀{s : Seq C}, HasSeqColimit s]
+    variable [∀{s : Seq A}, HasSeqColimit s]
+    variable [∀{s : Seq B}, HasSeqColimit s]
     variable [HasLimits Cat] -- TODO: CategoryTheory.Cat.instHasLimits?
 
     -- ∀{f : SeqDiagram C}, (∀{x}, f x in A) → (seqColim f in A)
     -- ∀{f : SeqDiagram A}, F.obj (seqColim f) = seqColim (Functor.comp f F)
     def lem1
-      (F : Functor A C) [Reflective F]
-      (G : Functor B C) [Reflective G]
+      (F : Functor A C) [Reflective F] -- (pa : ∀{s : Seq A}, F.obj (seqColim s) = colim (Functor.comp s.diagram F))
+      (G : Functor B C) [Reflective G] -- (pb : ∀{s : Seq B}, G.obj (seqColim s) = colim (Functor.comp s.diagram G))
       : Σ H : Functor (pullback (C := Cat) (X := Cat.of A) (Y := Cat.of B) (Z := Cat.of C) F G) C, Reflective H :=
         let TA : Functor C C := Adjunction.toMonad (reflectorAdjunction F)
         let TB : Functor C C := Adjunction.toMonad (reflectorAdjunction G)
@@ -64,7 +64,7 @@ section
         let MsuccA := (whiskeringRight C C C).obj TA
         let MsuccB := (whiskeringRight C C C).obj TB
         let Msucc  := Functor.comp MsuccB MsuccA
-        let Minf   := seqColim (SeqDiagram.byRepeat' Msucc (.mk sorry) Mzero)
+        let Minf   := seqColim (Seq.byRepeat' Msucc (.mk (by dsimp [Msucc , MsuccA , MsuccB , TA , TB] ; sorry)) Mzero)
 
         .mk
           (.mk

@@ -15,159 +15,195 @@ universe v u
 variable {C : Type u}
 variable [Category.{v, u} C]
 
-abbrev SeqDiagram (C : Type u) [Category.{v, u} C] := Functor ℕ C
-
-abbrev HasSeqColimit(f : SeqDiagram C) := HasColimit f
-noncomputable abbrev seqColim (f : SeqDiagram C) [HasSeqColimit f] := colimit f
-
-noncomputable abbrev seqColim.ι (f : SeqDiagram C) [HasSeqColimit f] (n : ℕ)
-  : f.obj n ⟶ seqColim f
-  := colimit.ι f n
-
-
-
 structure Seq (C : Type u) [Category.{v, u} C] where
   obj : ℕ → C
   map : (n : ℕ) → obj n ⟶ obj (Nat.succ n)
+namespace Seq
+  abbrev const (c : C) : Seq C := .mk (fun _ => c) (fun _ => CategoryStruct.id c)
+  abbrev step (s : Seq C) : Seq C := .mk (s.obj ∘ Nat.succ) (fun n => s.map (Nat.succ n))
+  abbrev Diagram (C : Type u) [Category.{v, u} C] := Functor ℕ C
+  abbrev diagram (s : Seq C) : Seq.Diagram C := Functor.ofSequence s.map
 
-abbrev Seq.step (s : Seq C) : Seq C := .mk (s.obj ∘ Nat.succ) (fun n => s.map (Nat.succ n))
+  def byRepeat (f : Functor C C) (z : Σ c : C, c ⟶ f.obj c) : Seq C :=
+    let o (n : ℕ) : C := Nat.repeat f.obj n z.1
+    let rec m (n : ℕ) : o n ⟶ o (n + 1) := match n with
+      | Nat.zero   => z.2
+      | Nat.succ n => f.map (m n)
+    .mk o m
 
-def SeqDiagram.bySequence (s : Seq C) : SeqDiagram C
-  := Functor.ofSequence s.map
+  -- TODO: Pointed endofunctor (NatTrans (Functor.id C) f) instead of zm, but what would the naturality give?
+  def byRepeat' (f : Functor C C) (m : NatTrans (Functor.id C) f) (z : C) : Seq C :=
+    byRepeat f (.mk z (m.app z))
 
-namespace BySequence
-  variable {W : C}
   variable (s : Seq C)
-  variable {p : (n : ℕ) → s.obj n ⟶ W}
-  variable {eq : ∀(n : ℕ), s.map n ≫ p (Nat.succ n) = p n}
 
-  lemma map_id (n : ℕ) (o : n ⟶ n) : (SeqDiagram.bySequence s).map o = CategoryStruct.id (s.obj n)
+  lemma diagram_map_id {n : ℕ} (o : n ⟶ n) : s.diagram.map o = CategoryStruct.id (s.obj n)
     := by
       rewrite [Subsingleton.elim o (homOfLE (by omega))]
       exact Functor.OfSequence.map_id s.map n
 
-  lemma map_comp (a b c : ℕ) (o1 : a ⟶ b) (o2 : b ⟶ c) (o3 : a ⟶ c) : (SeqDiagram.bySequence s).map o3 = (SeqDiagram.bySequence s).map o1 ≫ (SeqDiagram.bySequence s).map o2
+  lemma diagram_map_comp {a b c : ℕ} (o1 : a ⟶ b) (o2 : b ⟶ c) (o3 : a ⟶ c) : s.diagram.map o3 = s.diagram.map o1 ≫ s.diagram.map o2
     := Functor.OfSequence.map_comp s.map a b c (leOfHom o1) (leOfHom o2)
 
-  lemma map_succ (n : ℕ) (o : n ⟶ Nat.succ n) : (SeqDiagram.bySequence s).map o = s.map n
+  lemma diagram_map_is_map (n : ℕ) {o : n ⟶ Nat.succ n} : s.diagram.map o = s.map n
     := by
       rewrite [Subsingleton.elim o (homOfLE (Nat.le_add_right n 1))]
       exact Functor.OfSequence.map_le_succ s.map n
 
-  -- Follows the structure of https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Shapes/Pullback/PullbackCone.html
-  abbrev SeqColimCocone := Cocone (SeqDiagram.bySequence s)
-  namespace SeqColimCocone
-    variable {s : Seq C}
-    variable {t : SeqColimCocone s}
-
-    -- TODO: This is probably the correct signature
-    -- def mk2 (s' : Seq C)
-    --   (p : (n : ℕ) → s.obj n ⟶ s'.obj n)
-    --   (eq : ∀(n : ℕ), s.map n ≫ p (Nat.succ n) = p n ≫ s'.map n)
-    --   : SeqColimCocone s
-    --   := sorry
+  abbrev Morphism (s1 s2 : Seq C) := NatTrans s1.diagram s2.diagram
+  namespace Morphism
+    variable {s s1 s2 : Seq C}
+    variable {t : Seq.Morphism s1 s2}
 
     def mk
-      (p : (n : ℕ) → s.obj n ⟶ W) -- TODO: Is it really enough when W is not dependent on n?
-      (eq : ∀(n : ℕ), s.map n ≫ p (Nat.succ n) = p n)
-      : SeqColimCocone s where
-      pt := W
-      ι :=
+      (p : (n : ℕ) → s1.obj n ⟶ s2.obj n)
+      (eq : ∀(n : ℕ), s1.map n ≫ p (Nat.succ n) = p n ≫ s2.map n)
+      : Seq.Morphism s1 s2 :=
         let e := by
           intro n
-          simp
-          rewrite [map_succ s n (homOfLE (by omega))]
+          rewrite [s1.diagram_map_is_map n]
+          rewrite [s2.diagram_map_is_map n]
           exact eq n
-        NatTrans.ofSequence (F := SeqDiagram.bySequence s) (G := (Functor.const ℕ).obj W) p e
-
-    abbrev ι (t : SeqColimCocone s) (n : ℕ) : s.obj n ⟶ t.pt
-      := (Cocone.ι t).app n
+        NatTrans.ofSequence (F := s1.diagram) (G := s2.diagram) p e
 
     @[reassoc]
-    theorem condition (n : ℕ)
-      : s.map n ≫ ι t (Nat.succ n) = ι t n
+    theorem condition (n : ℕ) : s1.map n ≫ t.app (Nat.succ n) = t.app n ≫ s2.map n
       := by
         let o : n ⟶ Nat.succ n := homOfLE (by omega)
-        rewrite [(map_succ s n o).symm]
-        exact Cocone.w t o
+        rewrite [(s1.diagram_map_is_map n (o := o)).symm]
+        rewrite [(s2.diagram_map_is_map n (o := o)).symm]
+        exact t.naturality o
 
-    def step (t : SeqColimCocone s)
-      : SeqColimCocone s.step
-      := SeqColimCocone.mk
-        (fun n => t.ι (Nat.succ n))
-        (fun n => t.condition (Nat.succ n))
+    def step (t : Seq.Morphism s1 s2) : Seq.Morphism s1.step s2.step
+      := Morphism.mk
+        (fun n => t.app n.succ)
+        (fun n => condition n.succ (t := t))
 
-    def unstep (t : SeqColimCocone s.step)
-      : SeqColimCocone s
-      := SeqColimCocone.mk
-        (fun n => s.map n ≫ SeqColimCocone.ι t n)
-        (fun n => by simp ; rewrite [t.condition n] ; rfl)
+  end Morphism
 
-    def stepIsColimit (ht : IsColimit t) : IsColimit t.step
-      := IsColimit.mk
-        (fun s => ht.desc (unstep s))
-        (fun s j => by simp ; sorry) -- TODO: How to unroll the definitions?
-        (fun s m j => by simp ; sorry)
-        -- IsColimit.mk _ (fun s => ht.desc s.flip) (by simp) (by simp) (fun s m h₁ h₂ => by apply IsColimit.hom_ext ht <;> simp [h₁, h₂])
+  instance category : Category (Seq C) where
+    Hom := Seq.Morphism
+    id s := NatTrans.id s.diagram
+    comp := NatTrans.vcomp
 
-  end SeqColimCocone
+end Seq
 
-  noncomputable abbrev seqColim.cocone
-    [HasSeqColimit (SeqDiagram.bySequence s)]
-    := colimit.cocone (SeqDiagram.bySequence s)
+abbrev HasSeqColimit(s : Seq C) := HasColimit s.diagram
+noncomputable abbrev seqColim (s : Seq C) [HasSeqColimit s] := colimit s.diagram
 
-  noncomputable abbrev seqColim.desc
-    [HasSeqColimit (SeqDiagram.bySequence s)]
-    (p : (n : ℕ) → s.obj n ⟶ W)
+noncomputable abbrev seqColim.ι (s : Seq C) [HasSeqColimit s] (n : ℕ)
+  : s.obj n ⟶ seqColim s
+  := colimit.ι s.diagram n
+
+
+
+
+
+
+variable (s : Seq C)
+variable {W : C}
+variable {p : (n : ℕ) → s.obj n ⟶ W}
+variable {eq : ∀(n : ℕ), s.map n ≫ p (Nat.succ n) = p n}
+
+-- Follows the structure of https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Shapes/Pullback/PullbackCone.html
+abbrev SeqColimCocone := Cocone s.diagram
+namespace SeqColimCocone -- TODO: Use Morphism
+  variable {s : Seq C}
+  variable {t : SeqColimCocone s}
+
+  def mk
+    (p : (n : ℕ) → s.obj n ⟶ W) -- TODO: Is it really enough when W is not dependent on n?
     (eq : ∀(n : ℕ), s.map n ≫ p (Nat.succ n) = p n)
-    : seqColim (SeqDiagram.bySequence s) ⟶ W
-    := colimit.desc (SeqDiagram.bySequence s) (SeqColimCocone.mk p eq)
+    : SeqColimCocone s where
+    pt := W
+    ι :=
+      let e := by
+        intro n
+        simp
+        exact eq n
+      NatTrans.ofSequence (F := s.diagram) (G := (Functor.const ℕ).obj W) p e
+
+  abbrev ι (t : SeqColimCocone s) (n : ℕ) : s.obj n ⟶ t.pt
+    := (Cocone.ι t).app n
 
   @[reassoc]
-  theorem seqColim.ι_desc
-    [HasSeqColimit (SeqDiagram.bySequence s)]
-    (p : (n : ℕ) → s.obj n ⟶ W)
-    (eq : ∀(n : ℕ), s.map n ≫ p (Nat.succ n) = p n)
-    (n : ℕ)
-    : seqColim.ι _ n ≫ seqColim.desc s p eq = p n
-    := colimit.ι_desc _ _
+  theorem condition (n : ℕ)
+    : s.map n ≫ ι t (Nat.succ n) = ι t n
+    := by
+      let o : n ⟶ Nat.succ n := homOfLE (by omega)
+      rewrite [(s.diagram_map_is_map n (o := o)).symm]
+      exact Cocone.w t o
 
-  @[reassoc]
-  theorem seqColim.condition
-    [HasSeqColimit (SeqDiagram.bySequence s)]
-    (n : ℕ)
-    : s.map n ≫ seqColim.ι (SeqDiagram.bySequence s) (Nat.succ n) = seqColim.ι (SeqDiagram.bySequence s) n
-    := SeqColimCocone.condition n
+  def step (t : SeqColimCocone s)
+    : SeqColimCocone s.step
+    := SeqColimCocone.mk
+      (fun n => ι t (Nat.succ n))
+      (fun n => condition (Nat.succ n) (t := t))
 
-  -- def seqColimIsSeqColim
-  --   [HasSeqColimit (SeqDiagram.bySequence s)]
-  --   : IsColimit (SeqColimCocone.mk (seqColim.ι) seqColim.condition)
-  --   := SeqColimCocone.IsColimit.mk _ (fun s => seqColim.desc s.ι s.condition) (by simp) (by simp) (by aesop_cat)
-  --
-  -- instance hasSeqColimit_step [HasSeqColimit (SeqDiagram.bySequence s)]
-  --   : HasSeqColimit (SeqDiagram.bySequence s.step) -- TODO: Where is the dependent function composition?
-  --   := ⟨⟨⟨_, SeqColimCocone.stepIsColimit (seqColimIsSeqColim s)⟩⟩⟩
-  --
-  -- def seqColim_step
-  --   [HasSeqColimit (SeqDiagram.bySequence s)]
-  --   : seqColim (SeqDiagram.bySequence s) ≅ seqColim (SeqDiagram.bySequence s.step)
-  --   := IsColimit.coconePointUniqueUpToIso (SeqColimCocone.stepIsColimit (seqColimIsSeqColim s)) (colimit.isColimit _)
+  def unstep (t : SeqColimCocone s.step)
+    : SeqColimCocone s
+    := SeqColimCocone.mk
+      (fun n => s.map n ≫ ι t n)
+      (fun n => congr_arg _ (condition n (t := t)))
 
-end BySequence
+  def stepIsColimit (ht : IsColimit t) : IsColimit t.step
+    := IsColimit.mk
+      (fun s => ht.desc (unstep s))
+      (fun t' n => by
+        simp [step , mk , unstep , ι]
+        exact condition n (t := t')
+      )
+      (fun t' f e => by
+        simp [mk , unstep , ι]
+        apply IsColimit.hom_ext ht
+        intro n
+        simp
+        rewrite [(e n).symm]
+        simp [step , mk , ι]
+        simp [condition_assoc n (t := t) f]
+      )
 
+end SeqColimCocone
 
+noncomputable abbrev seqColim.cocone
+  [HasSeqColimit s]
+  := colimit.cocone s.diagram
 
-def SeqDiagram.byRepeat (f : Functor C C) (z : Σ c : C, c ⟶ f.obj c) : SeqDiagram C :=
-  let o (n : ℕ) : C := Nat.repeat f.obj n z.1
-  let rec m (n : ℕ) : o n ⟶ o (n + 1) := match n with
-    | Nat.zero   => z.2
-    | Nat.succ n => f.map (m n)
-  SeqDiagram.bySequence (.mk o m)
+noncomputable abbrev seqColim.desc
+  [HasSeqColimit s]
+  (p : (n : ℕ) → s.obj n ⟶ W)
+  (eq : ∀(n : ℕ), s.map n ≫ p (Nat.succ n) = p n)
+  : seqColim s ⟶ W
+  := colimit.desc s.diagram (SeqColimCocone.mk p eq)
 
+@[reassoc]
+theorem seqColim.ι_desc
+  [HasSeqColimit s]
+  (p : (n : ℕ) → s.obj n ⟶ W)
+  (eq : ∀(n : ℕ), s.map n ≫ p (Nat.succ n) = p n)
+  (n : ℕ)
+  : seqColim.ι _ n ≫ seqColim.desc s p eq = p n
+  := colimit.ι_desc _ _
 
+@[reassoc]
+theorem seqColim.condition
+  [HasSeqColimit s]
+  (n : ℕ)
+  : s.map n ≫ seqColim.ι s (Nat.succ n) = seqColim.ι s n
+  := SeqColimCocone.condition n
 
--- TODO: Pointed endofunctor (NatTrans (Functor.id C) f) instead of zm, but what would the naturality give?
-def SeqDiagram.byRepeat' (f : Functor C C) (m : NatTrans (Functor.id C) f) (z : C) : SeqDiagram C :=
-  SeqDiagram.byRepeat f (.mk z (m.app z))
+-- def seqColimIsSeqColim
+--   [HasSeqColimit s.diagram]
+--   : IsColimit (SeqColimCocone.mk (seqColim.ι) seqColim.condition)
+--   := SeqColimCocone.IsColimit.mk _ (fun s => seqColim.desc s.ι s.condition) (by simp) (by simp) (by aesop_cat)
+--
+-- instance hasSeqColimit_step [HasSeqColimit s.diagram]
+--   : HasSeqColimit (s.diagram.step) -- TODO: Where is the dependent function composition?
+--   := ⟨⟨⟨_, SeqColimCocone.stepIsColimit (seqColimIsSeqColim s)⟩⟩⟩
+--
+-- def seqColim_step
+--   [HasSeqColimit s.diagram]
+--   : seqColim s.diagram ≅ seqColim (s.diagram.step)
+--   := IsColimit.coconePointUniqueUpToIso (SeqColimCocone.stepIsColimit (seqColimIsSeqColim s)) (colimit.isColimit _)
 
 end Limits

@@ -1,3 +1,3 @@
--- This module serves as the root of the `Pushoutpaths` library.
--- Import modules here that should be built as part of the library.
-import Pushoutpaths.Basic
+import Pop.CategoryTheory.Limits.Shapes.SeqColimit
+import Pop.Main1
+import Pop.Main2

@@ -33,7 +33,7 @@ section
 
   variable [∀{X Y Z : C}{f : X ⟶ Z}{g : Y ⟶ Z}, HasPullback f g]
   variable [∀{X Y Z : C}{f : X ⟶ Y}{g : X ⟶ Z}, HasPushout f g]
-  variable [∀{f : SeqDiagram C}, HasSeqColimit f]
+  variable [∀{s : Seq C}, HasSeqColimit s]
 
   section
     -- 2.9
@@ -152,6 +152,6 @@ section
 
     -- 3.4
     -- TODO: Finish graph morphisms above and make use of it here instead
-    def zigzag (m : s1 ⟶ s2) : SeqDiagram (Over s2) :=
-      SeqDiagram.byRepeat (C := Over s2) (Over.map sorry) sorry -- TODO: give this some thought
+    def zigzag (m : s1 ⟶ s2) : Seq (Over s2) :=
+      Seq.byRepeat (C := Over s2) (Over.map sorry) sorry -- TODO: give this some thought
   end
