@@ -59,25 +59,6 @@ namespace Seq
   lemma diagram_map_succ_is_step (a b : ℕ) {o1 : a.succ ⟶ b.succ} {o2 : a ⟶ b} : s.diagram.map o1 = s.step.diagram.map o2
     := by rfl
 
-  -- TODO: This proof works in general (s.diagram.map o = f o) when (s.step = s) and (s.map _ = f _)?
-  lemma diagram_map_const {a b : ℕ} (c : C) (o : a ⟶ b) : (Seq.const c).diagram.map o = 𝟙 c
-    := by
-      simp [const , diagram]
-      let rec i a b (o : a ⟶ b) : (Functor.ofSequence fun x ↦ 𝟙 c).map o = 𝟙 c := match a , b with
-        | 0 , 0 => rfl
-        | 0 , Nat.succ b => by
-          rewrite [diagram_map_succ_is_comp_map (Seq.const c) 0 b (o1 := o) (o2 := homOfLE (by omega))]
-          rewrite [i 0 b (homOfLE (by omega))]
-          aesop_cat
-        | Nat.succ a , Nat.succ b => by
-          let o' : a ⟶ b :=
-            let _ := leOfHom o
-            homOfLE (by omega)
-          rewrite [diagram_map_succ_is_step (Seq.const c) a b (o1 := o) (o2 := o')]
-          simp [Seq.step_const c]
-          rw [i a b o']
-      exact i a b o
-
   lemma diagram_map_ext
     (f : {a b : ℕ} → (a ⟶ b) → (s.obj a ⟶ s.obj b))
     (fid : ∀{n : ℕ}{o : n ⟶ n}, f o = 𝟙 (s.obj n))
@@ -101,10 +82,31 @@ namespace Seq
       intro a b
       exact i a b
 
+  lemma diagram_map_const (c : C) : ∀{a b : ℕ}(o : a ⟶ b), (Seq.const c).diagram.map o = 𝟙 c
+    := diagram_map_ext (Seq.const c) (fun _ => 𝟙 c) rfl (by aesop_cat) (fun p => p)
+
   lemma diagram_const {c : C} : (Seq.const c).diagram = (Functor.const ℕ).obj c := by
     simp [Functor.ofSequence , Functor.const]
     ext i j o
     exact diagram_map_const c o
+
+  abbrev Mapping (s : Seq C) (d : Seq.Diagram C) := NatTrans s.diagram d
+  namespace Mapping
+    variable {s : Seq C}
+    variable {d : Seq.Diagram C}
+    variable {t : Seq.Mapping s d}
+
+    def mk
+      (p : (n : ℕ) → s.obj n ⟶ d.obj n)
+      (eq : ∀(n : ℕ)(o : n ⟶ n.succ), s.map n ≫ p (Nat.succ n) = p n ≫ d.map o)
+      : Seq.Mapping s d :=
+        NatTrans.ofSequence (F := s.diagram) (G := d) p (by
+          intro n
+          rewrite [s.diagram_map_is_map n]
+          exact eq n _
+        )
+
+  end Mapping
 
   abbrev Morphism (s1 s2 : Seq C) := NatTrans s1.diagram s2.diagram
   namespace Morphism
@@ -114,13 +116,7 @@ namespace Seq
     def mk
       (p : (n : ℕ) → s1.obj n ⟶ s2.obj n)
       (eq : ∀(n : ℕ), s1.map n ≫ p (Nat.succ n) = p n ≫ s2.map n)
-      : Seq.Morphism s1 s2 :=
-        let e := by
-          intro n
-          rewrite [s1.diagram_map_is_map n]
-          rewrite [s2.diagram_map_is_map n]
-          exact eq n
-        NatTrans.ofSequence (F := s1.diagram) (G := s2.diagram) p e
+      : Seq.Morphism s1 s2 := Mapping.mk p (by simp [s2.diagram_map_is_map , eq])
 
     @[reassoc]
     theorem condition (n : ℕ) : s1.map n ≫ t.app (Nat.succ n) = t.app n ≫ s2.map n
@@ -173,16 +169,7 @@ namespace SeqColimCocone
     (eq : ∀(n : ℕ), s.map n ≫ p (Nat.succ n) = p n)
     : SeqColimCocone s where
     pt := W
-    ι := NatTrans.ofSequence (F := s.diagram) (G := (Functor.const ℕ).obj W) p (by
-      intro n
-      rewrite [Seq.diagram_map_is_map]
-      simp [eq]
-    )
-    -- by -- An alternative construction by tactics. Unpreferable due to a different more complicated reduct.
-    --   simp [Seq.diagram_const.symm]
-    --   apply Seq.Morphism.mk (s1 := s) (s2 := Seq.const W) p
-    --   simp [Seq.diagram_const.symm]
-    --   exact eq
+    ι := Seq.Mapping.mk p (by simp [eq])
 
   abbrev ι (t : SeqColimCocone s) (n : ℕ) : s.obj n ⟶ t.pt
     := (Cocone.ι t).app n
@@ -211,16 +198,16 @@ namespace SeqColimCocone
     := IsColimit.mk
       (fun s => ht.desc (unstep s))
       (fun t' n => by
-        simp [step , mk , unstep , ι]
+        simp [Seq.Mapping.mk , step , mk , unstep , ι]
         exact condition n (t := t')
       )
       (fun t' f e => by
-        simp [mk , unstep , ι]
+        simp [Seq.Mapping.mk , mk , unstep , ι]
         apply IsColimit.hom_ext ht
         intro n
         simp
         rewrite [(e n).symm]
-        simp [step , mk , ι]
+        simp [Seq.Mapping.mk , step , mk , ι]
         simp [condition_assoc n (t := t) f]
       )
 
