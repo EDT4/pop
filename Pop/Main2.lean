@@ -41,6 +41,7 @@ section
     := sorry
 
   -- TODO: Maybe reflective subcategories preserve the property of having limits?
+  -- TODO: But now it is currently unused
   -- theorem instHasSeqColimit_of_reflective
   --   {F : Functor A B} [Reflective F]
   --   : [∀{f : SeqDiagram B}, HasSeqColimit f]
@@ -50,11 +51,8 @@ section
   section
     variable [∀{s : Seq A}, HasSeqColimit s]
     variable [∀{s : Seq B}, HasSeqColimit s]
-    variable [HasLimits Cat] -- TODO: CategoryTheory.Cat.instHasLimits?
+    variable [HasLimits Cat] -- TODO: CategoryTheory.Cat.instHasLimits? Maybe check universes?
 
-    -- ∀{f : SeqDiagram C}, (∀{x}, f x in A) → (seqColim f in A)
-    -- ∀{f : SeqDiagram A}, F.obj (seqColim f) = seqColim (Functor.comp f F)
-    -- (pa : ∀{s : Seq A}, F.obj (colimit s.diagram) = colimit (Functor.comp s.diagram F))
     -- TODO: 2-categories later. Correct using Mathlib.CategoryTheory.Bicategory.Basic and Mathlib.CategoryTheory.Bicategory.Functor.Oplax? (https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Bicategory/Basic.html#CategoryTheory.Bicategory)
     def lem1
       [∀{s : Seq C}, HasSeqColimit s]
@@ -71,19 +69,10 @@ section
         -- let Mseq   := Seq.byRepeat' Msucc (.mk (by dsimp [Msucc , MsuccA , MsuccB , TA , TB] ; sorry)) Mzero
         -- let Minf   := seqColim Mseq
 
-        -- let test := Minf ⋙ reflector F
-        -- let test2 := pullback (C := Cat) (X := Cat.of A) (Y := Cat.of B) (Z := Cat.of C) F G
-        -- let test3 := seqColim.desc (W := Minf) Mseq sorry sorry
-        -- let test4 := seqColim.ι Mseq
-        -- let test5 := test2.str.id
-
         let Minf (x : C) : C :=
           let ηA := (Adjunction.toMonad (reflectorAdjunction F)).η.app
           let ηB := (Adjunction.toMonad (reflectorAdjunction G)).η.app -- (reflectorAdjunction G).unit
           let rec M (n : ℕ) : C := Nat.rec (fun _ _ => x) (fun _ r T1 T2 => T1 (r T2 T1)) n TA.obj TB.obj
-          -- let rec M (n : ℕ) : C := match n with
-          -- | 0     => x
-          -- | n + 1 => TA.obj (M n)
           let MeqA {n : ℕ} (p :  Even n) : M n.succ = TA.obj (M n) := sorry -- TODO: How to reduce M?
           let MeqB {n : ℕ} (p : ¬Even n) : M n.succ = TB.obj (M n) := sorry
           let Mmap (n : ℕ) : M n ⟶ M (n + 1) :=
@@ -96,14 +85,6 @@ section
                 rewrite [MeqA p]
                 exact ηA (M n)
               )
-            -- if decide (Even n)
-            -- then (by
-            --   rewrite [MeqA]
-            --   exact ηA (M n)
-            -- ) else (by
-            --   rewrite [MeqB sorry]
-            --   exact ηB (M n)
-            -- )
           let Mseq : Seq C := .mk M Mmap
           let Minf := seqColim Mseq
           let ι := seqColim.ι Mseq
