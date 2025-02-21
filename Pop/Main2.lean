@@ -48,6 +48,20 @@ section
   --   → (∀{f : SeqDiagram A}, HasSeqColimit f)
   --   := hasColimitsOfShape_of_reflective _
 
+  def Natrec2
+    {A : ℕ → Sort u}
+    (zero : A 0)
+    (succ0 : (n : ℕ) → Even n → A n → A n.succ)
+    (succ1 : (n : ℕ) → ¬Even n → A n → A n.succ)
+    : (n : Nat) → A n
+    | 0     => zero
+    | n + 1 => Natrec2
+      (A := fun n => A n.succ)
+      (succ0 0 Even.zero zero)
+      (fun n e => succ1 n.succ (Nat.even_add_one.mp (Nat.even_add (n := 2).mpr (.intro (fun _ => by decide) (fun _ => e)))))
+      (fun n e => succ0 n.succ (Nat.even_add_one.mpr e))
+      n
+
   section
     variable [∀{s : Seq A}, HasSeqColimit s]
     variable [∀{s : Seq B}, HasSeqColimit s]
@@ -68,12 +82,13 @@ section
         -- let Msucc  := MsuccA ⋙ MsuccB
         -- let Mseq   := Seq.byRepeat' Msucc (.mk (by dsimp [Msucc , MsuccA , MsuccB , TA , TB] ; sorry)) Mzero
         -- let Minf   := seqColim Mseq
+        -- TODO: Would be nice if the above more simple definitions yields the same as below, but not sure? More explicitly if Minf.obj above is Minf below?
 
         let Minf (x : C) : C :=
           let ηA := (Adjunction.toMonad (reflectorAdjunction F)).η.app
           let ηB := (Adjunction.toMonad (reflectorAdjunction G)).η.app -- (reflectorAdjunction G).unit
-          let rec M (n : ℕ) : C := Nat.rec (fun _ _ => x) (fun _ r T1 T2 => T1 (r T2 T1)) n TA.obj TB.obj
-          let MeqA {n : ℕ} (p :  Even n) : M n.succ = TA.obj (M n) := sorry -- TODO: How to reduce M?
+          let M : ℕ → C := Natrec2 x (fun _ _ => TA.obj) (fun _ _ => TB.obj)
+          let MeqA {n : ℕ} (p :  Even n) : M n.succ = TA.obj (M n) := Natrec2 (A := fun n => Even n → M n.succ = TA.obj (M n)) (fun _ => rfl) (by simp ; sorry) sorry n p -- Nat.rec rfl (by simp [Natrec2,M] ; sorry) n
           let MeqB {n : ℕ} (p : ¬Even n) : M n.succ = TB.obj (M n) := sorry
           let Mmap (n : ℕ) : M n ⟶ M (n + 1) :=
             Decidable.casesOn (Nat.instDecidablePredEven n)
@@ -104,5 +119,3 @@ section
           sorry
   end
 end
-
--- TODO: Old references before code removal: https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Bicategory/Basic.html https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Comma/Basic.html#CategoryTheory.Comma
