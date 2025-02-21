@@ -105,5 +105,13 @@ section
             sorry
           )
           sorry
+
+    def lem1'
+      [∀{s : Seq C}, HasSeqColimit s]
+      (F : Functor A C) [Reflective F] [PreservesColimitsOfShape ℕ F]
+      (G : Functor B C) [Reflective G] [PreservesColimitsOfShape ℕ G]
+      : sorry
+      := sorry
+
   end
 end
