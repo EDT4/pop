@@ -18,6 +18,8 @@ import Mathlib.CategoryTheory.Whiskering
 import Mathlib.Combinatorics.Quiver.Basic
 import Mathlib.Algebra.Ring.Parity
 -- import Mathlib.CategoryTheory.Limits.Shapes.Pushout.HasPushout
+-- import Mathlib.CategoryTheory.ObjectProperty.Basic
+import Mathlib.CategoryTheory.FullSubcategory
 
 import Pop.CategoryTheory.Limits.Shapes.SeqColimit
 import Pop.NatExtras
@@ -106,12 +108,23 @@ section
           )
           sorry
 
+    -- TODO: Ideas for later
+    --   https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Elements.html
+    --   https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Sigma/Basic.html#CategoryTheory.Sigma.sigma
+    --   https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html
+    --   https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/FullSubcategory.html#CategoryTheory.FullSubcategory
+    --   Why is FullSubcategory not using this type? https://leanprover-community.github.io/mathlib4_docs/Init/Prelude.html#Subtype
     def lem1'
-      [∀{s : Seq C}, HasSeqColimit s]
-      (F : Functor A C) [Reflective F] [PreservesColimitsOfShape ℕ F]
-      (G : Functor B C) [Reflective G] [PreservesColimitsOfShape ℕ G]
-      : sorry
-      := sorry
+      [∀{s : Seq C}, HasSeqColimit s] -- TODO: Change later
+      -- TODO: Reflective includes full and faithful, but it is already implied by F and G. Maybe not a problem?
+      (F : C → Prop) [Reflective (fullSubcategoryInclusion F)] [PreservesColimitsOfShape ℕ (fullSubcategoryInclusion F)]
+      (G : C → Prop) [Reflective (fullSubcategoryInclusion G)] [PreservesColimitsOfShape ℕ (fullSubcategoryInclusion G)]
+      : Reflective (fullSubcategoryInclusion (fun c => F c ∧ G c))
+      :=
+        {
+          L := sorry
+          adj := sorry
+        }
 
   end
 end

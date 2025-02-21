@@ -91,3 +91,5 @@ def Nat.rec2'_even_case
       (fun _ p1 _ p2 => (Nat.even_add_one.mp p2 p1).elim)
       (fun n o p e => by exact Decidable.casesOn (Nat.instDecidablePredEven n) (fun o2 => sorry) (by aesop)) -- TODO: How to prove on casesOn?
       n p
+
+-- TODO: There is also this one, but the recursion looks weird? https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Nat/EvenOddRec.html#Nat.evenOddRec
