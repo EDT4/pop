@@ -66,14 +66,6 @@ section
         let TA : Functor C C := Adjunction.toMonad (reflectorAdjunction F)
         let TB : Functor C C := Adjunction.toMonad (reflectorAdjunction G)
 
-        -- let Mzero  := Functor.id C
-        -- let MsuccA := (whiskeringRight C C C).obj TA
-        -- let MsuccB := (whiskeringRight C C C).obj TB
-        -- let Msucc  := MsuccA ⋙ MsuccB
-        -- let Mseq   := Seq.byRepeat' Msucc (.mk (by dsimp [Msucc , MsuccA , MsuccB , TA , TB] ; sorry)) Mzero
-        -- let Minf   := seqColim Mseq
-        -- TODO: Would be nice if the above more simple definitions yields the same as below, but not sure? More explicitly if Minf.obj above is Minf below?
-
         let Minf (x : C) : C :=
           let ηA := (Adjunction.toMonad (reflectorAdjunction F)).η.app
           let ηB := (Adjunction.toMonad (reflectorAdjunction G)).η.app
@@ -114,15 +106,22 @@ section
     --   https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html
     --   https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/FullSubcategory.html#CategoryTheory.FullSubcategory
     --   Why is FullSubcategory not using this type? https://leanprover-community.github.io/mathlib4_docs/Init/Prelude.html#Subtype
-    def lem1'
+    noncomputable def lem1' -- TODO: Should probably be computable when not using colim
       [∀{s : Seq C}, HasSeqColimit s] -- TODO: Change later
       -- TODO: Reflective includes full and faithful, but it is already implied by F and G. Maybe not a problem?
-      (F : C → Prop) [Reflective (fullSubcategoryInclusion F)] [PreservesColimitsOfShape ℕ (fullSubcategoryInclusion F)]
-      (G : C → Prop) [Reflective (fullSubcategoryInclusion G)] [PreservesColimitsOfShape ℕ (fullSubcategoryInclusion G)]
-      : Reflective (fullSubcategoryInclusion (fun c => F c ∧ G c))
+      (A : C → Prop) [Reflective (fullSubcategoryInclusion A)] [PreservesColimitsOfShape ℕ (fullSubcategoryInclusion A)]
+      (B : C → Prop) [Reflective (fullSubcategoryInclusion B)] [PreservesColimitsOfShape ℕ (fullSubcategoryInclusion B)]
+      : Reflective (fullSubcategoryInclusion (fun c => A c ∧ B c)) -- TODO: Is there no short way of writing this?
       :=
+        -- TODO: Would be nice if these more simple definitions yields the same as above, but not sure? More explicitly if Minf.obj below is Minf above?
+        let TA : Functor C C := Adjunction.toMonad (reflectorAdjunction (fullSubcategoryInclusion A))
+        let TB : Functor C C := Adjunction.toMonad (reflectorAdjunction (fullSubcategoryInclusion B))
+        let Mseq := Seq.byIterate (TA ⋙ TB) sorry
+        let Minf := seqColim Mseq
+        let inA : ∀(c : C), A (Minf.obj c) := sorry
+        let inB : ∀(c : C), B (Minf.obj c) := sorry
         {
-          L := sorry
+          L := FullSubcategory.lift (C := C) (D := C) (fun c => A c ∧ B c) Minf (fun c => .intro (inA c) (inB c))
           adj := sorry
         }
 

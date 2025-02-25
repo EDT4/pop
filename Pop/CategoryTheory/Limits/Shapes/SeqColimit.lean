@@ -132,8 +132,15 @@ namespace Seq
     map := Nat.rec z.2 (fun _ => f.map)
 
   -- TODO: Pointed endofunctor (NatTrans (Functor.id C) f) instead of zm, but what would the naturality give?
-  def byRepeat' (f : Functor C C) (m : NatTrans (Functor.id C) f) (z : C) : Seq C :=
+  def byRepeat' (f : Functor C C) (m : NatTrans (𝟭 C) f) (z : C) : Seq C :=
     byRepeat f (.mk z (m.app z))
+
+  def byIterate (f : Functor C C) (m : NatTrans (𝟭 C) f) : Seq (Functor C C)
+    where
+      -- let obj n := Nat.iterate (fun r => r ⋙ f) n (𝟭 C)
+      obj := Nat.rec (𝟭 C) (fun _ r => r ⋙ f)
+      map := Nat.rec m (fun _ r => whiskerRight r f)
+
 
 end Seq
 
