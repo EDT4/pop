@@ -39,6 +39,7 @@ section
   variable [∀{X Y Z : C}{f : X ⟶ Y}{g : X ⟶ Z}, HasPushout f g]
   variable [∀{s : Seq C}, HasSeqColimit s]
 
+  -- TODO: Is this true?
   instance instHasSeqColimitEndofunctor
     : [∀{s : Seq C}, HasSeqColimit s]
     → (∀{s : Seq (Functor C C)}, HasSeqColimit s)
@@ -107,7 +108,7 @@ section
     --   https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/FullSubcategory.html#CategoryTheory.FullSubcategory
     --   Why is FullSubcategory not using this type? https://leanprover-community.github.io/mathlib4_docs/Init/Prelude.html#Subtype
     noncomputable def lem1' -- TODO: Should probably be computable when not using colim
-      [∀{s : Seq C}, HasSeqColimit s] -- TODO: Change later
+      [HasSeqColimits C] -- TODO: Change later
       -- TODO: Reflective includes full and faithful, but it is already implied by F and G. Maybe not a problem?
       (A : C → Prop) [Reflective (fullSubcategoryInclusion A)] [PreservesColimitsOfShape ℕ (fullSubcategoryInclusion A)]
       (B : C → Prop) [Reflective (fullSubcategoryInclusion B)] [PreservesColimitsOfShape ℕ (fullSubcategoryInclusion B)]
@@ -118,6 +119,7 @@ section
         let TB : Functor C C := Adjunction.toMonad (reflectorAdjunction (fullSubcategoryInclusion B))
         let Mseq := Seq.byIterate (TA ⋙ TB) sorry
         let Minf := seqColim Mseq
+        -- TODO: When more stuff about seqcolim is proven. Something like TA ⋙ Minf = Minf ? Is it true?
         let inA : ∀(c : C), A (Minf.obj c) := sorry
         let inB : ∀(c : C), B (Minf.obj c) := sorry
         {

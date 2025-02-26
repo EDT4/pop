@@ -135,16 +135,15 @@ namespace Seq
   def byRepeat' (f : Functor C C) (m : NatTrans (𝟭 C) f) (z : C) : Seq C :=
     byRepeat f (.mk z (m.app z))
 
-  def byIterate (f : Functor C C) (m : NatTrans (𝟭 C) f) : Seq (Functor C C)
-    where
-      -- let obj n := Nat.iterate (fun r => r ⋙ f) n (𝟭 C)
-      obj := Nat.rec (𝟭 C) (fun _ r => r ⋙ f)
-      map := Nat.rec m (fun _ r => whiskerRight r f)
-
+  -- TODO: Prove stuff about this. Want something like byIterate f m ~= succ ⋙ byIterate f m ⋙ f but this is wrong
+  def byIterate (f : Functor C C) (m : NatTrans (𝟭 C) f) : Seq (Functor C C) where
+    obj := Nat.rec (𝟭 C) (fun _ r => r ⋙ f)
+    map := Nat.rec m (fun _ r => whiskerRight r f)
 
 end Seq
 
 abbrev HasSeqColimit(s : Seq C) := HasColimit s.diagram
+abbrev HasSeqColimits(C : Type u) [Category.{v,u} C] := HasColimitsOfShape ℕ C
 noncomputable abbrev seqColim (s : Seq C) [HasSeqColimit s] := colimit s.diagram
 
 noncomputable abbrev seqColim.ι (s : Seq C) [HasSeqColimit s] (n : ℕ)
