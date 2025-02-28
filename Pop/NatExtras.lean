@@ -54,7 +54,7 @@ def Nat.rec2_even_case
 def Nat.rec2_odd_case
   {A : ℕ → Sort u}
   {zero : A 0}
-  {succ0 : (n : ℕ) → Even n → A n → A n.succ}
+  {succ0 : (n : ℕ) →  Even n → A n → A n.succ}
   {succ1 : (n : ℕ) → ¬Even n → A n → A n.succ}
   {n : ℕ} (p :  ¬Even n)
   : Nat.rec2 zero succ0 succ1 n.succ = succ1 n p (Nat.rec2 zero succ0 succ1 n)
