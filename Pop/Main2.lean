@@ -6,7 +6,7 @@ import Mathlib.CategoryTheory.Adjunction.Reflective
 import Mathlib.CategoryTheory.Category.Cat
 import Mathlib.CategoryTheory.Category.Cat.Limit
 import Mathlib.CategoryTheory.Category.Preorder
-import Mathlib.CategoryTheory.Comma.Over
+import Mathlib.CategoryTheory.Comma.Over.Basic
 import Mathlib.CategoryTheory.Functor.OfSequence
 import Mathlib.CategoryTheory.Limits.Preserves.Basic
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Cospan
@@ -14,6 +14,7 @@ import Mathlib.CategoryTheory.Limits.Shapes.Pullback.PullbackCone
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
 import Mathlib.CategoryTheory.Monad.Adjunction
 import Mathlib.CategoryTheory.Monad.Limits
+import Mathlib.CategoryTheory.ObjectProperty.Basic
 import Mathlib.CategoryTheory.Whiskering
 import Mathlib.Combinatorics.Quiver.Basic
 import Mathlib.Algebra.Ring.Parity
@@ -100,32 +101,5 @@ section
             sorry
           )
           sorry
-
-    -- TODO: Ideas for later
-    --   https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Elements.html
-    --   https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Sigma/Basic.html#CategoryTheory.Sigma.sigma
-    --   https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html
-    --   https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/FullSubcategory.html#CategoryTheory.FullSubcategory
-    --   Why is FullSubcategory not using this type? https://leanprover-community.github.io/mathlib4_docs/Init/Prelude.html#Subtype
-    noncomputable def lem1' -- TODO: Should probably be computable when not using colim
-      [HasSeqColimits C] -- TODO: Change later
-      -- TODO: Reflective includes full and faithful, but it is already implied by F and G. Maybe not a problem?
-      (A : C → Prop) [Reflective (fullSubcategoryInclusion A)] [PreservesColimitsOfShape ℕ (fullSubcategoryInclusion A)]
-      (B : C → Prop) [Reflective (fullSubcategoryInclusion B)] [PreservesColimitsOfShape ℕ (fullSubcategoryInclusion B)]
-      : Reflective (fullSubcategoryInclusion (fun c => A c ∧ B c)) -- TODO: Is there no short way of writing this?
-      :=
-        -- TODO: Would be nice if these more simple definitions yields the same as above, but not sure? More explicitly if Minf.obj below is Minf above?
-        let TA : Functor C C := Adjunction.toMonad (reflectorAdjunction (fullSubcategoryInclusion A))
-        let TB : Functor C C := Adjunction.toMonad (reflectorAdjunction (fullSubcategoryInclusion B))
-        let Mseq := Seq.byIterate (TA ⋙ TB) sorry
-        let Minf := seqColim Mseq
-        -- TODO: When more stuff about seqcolim is proven. Something like TA ⋙ Minf = Minf ? Is it true?
-        let inA : ∀(c : C), A (Minf.obj c) := sorry
-        let inB : ∀(c : C), B (Minf.obj c) := sorry
-        {
-          L := FullSubcategory.lift (C := C) (D := C) (fun c => A c ∧ B c) Minf (fun c => .intro (inA c) (inB c))
-          adj := sorry
-        }
-
   end
 end
