@@ -153,5 +153,5 @@ section
     -- 3.4
     -- TODO: Finish graph morphisms above and make use of it here instead
     def zigzag (m : s1 ⟶ s2) : Seq (Over s2) :=
-      Seq.byRepeat (C := Over s2) (Over.map sorry) sorry -- TODO: give this some thought
+      Seq.repeats (C := Over s2) (Over.map sorry) sorry -- TODO: give this some thought
   end

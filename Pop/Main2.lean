@@ -76,12 +76,12 @@ section
             Decidable.casesOn (Nat.instDecidablePredEven n)
               (fun (p : ¬Even n) => by
                 simp [M]
-                rewrite [Nat.rec2_odd_case p]
+                rewrite [Nat.rec2_odd_step p]
                 exact ηB (M n)
               )
               (fun (p :  Even n) => by
                 simp [M]
-                rewrite [Nat.rec2_even_case p]
+                rewrite [Nat.rec2_even_step p]
                 exact ηA (M n)
               )
           let Mseq : Seq C := .mk M Mmap
