@@ -163,62 +163,44 @@ namespace Seq
     obj := Nat.rec (𝟙 c) (fun _ r => r ≫ f)
     map := Nat.rec (m ≫ (Bicategory.leftUnitor f).symm.hom) (fun _ r => Bicategory.whiskerRight r f)
 
-  -- def iterate2 (f g : Functor C C) (mf : NatTrans (𝟭 C) f) (mg : NatTrans (𝟭 C) g) : Seq (Functor C C) :=
-  --   let obj : ℕ → C ⥤ C := Nat.rec2 (𝟭 C) (fun _ r => r ⋙ f) (fun _ r => r ⋙ g)
-  --   let map : (n : ℕ) → obj n ⟶ obj n.succ := Nat.rec2 mf
-  --     (fun {n} e _ => by
-  --       simp [obj]
-  --       rewrite [Nat.rec2_odd_step (Nat.even_add_one'.mpr e) , Nat.rec2_even_step e]
-  --       exact whiskerLeft (obj n) (whiskerLeft f mg)
-  --     )
-  --     (fun {n} e _ => by
-  --       simp [obj]
-  --       rewrite [Nat.rec2_even_step (Nat.even_add_one.mpr e) , Nat.rec2_odd_step e]
-  --       exact whiskerLeft (obj n) (whiskerLeft g mf)
-  --     )
-  --   {obj := obj , map := map}
+  section
+    variable {C : Type _}
+    variable [Bicategory C]
+    variable {c : C}
 
-  def iterate2 {C : Type _} [Bicategory C] {c : C} (f g : c ⟶ c) (mf : 𝟙 c ⟶ f) (mg : 𝟙 c ⟶ g) : Seq (c ⟶ c) :=
-    let obj : ℕ → (c ⟶ c) := Nat.rec2 (𝟙 c) (fun _ r => r ≫ f) (fun _ r => r ≫ g)
-    let map : (n : ℕ) → obj n ⟶ obj n.succ := Nat.rec2 (mf ≫ (Bicategory.leftUnitor f).symm.hom)
-      (fun {n} e _ => by
-        simp [obj]
-        rewrite [Nat.rec2_odd_step (Nat.even_add_one'.mpr e) , Nat.rec2_even_step e]
-        exact Bicategory.whiskerLeft (obj n) ((Bicategory.rightUnitor f).symm.hom ≫ Bicategory.whiskerLeft f mg) ≫ (Bicategory.associator (obj n) f g).symm.hom
-      )
-      (fun {n} e _ => by
-        simp [obj]
-        rewrite [Nat.rec2_even_step (Nat.even_add_one.mpr e) , Nat.rec2_odd_step e]
-        exact Bicategory.whiskerLeft (obj n) ((Bicategory.rightUnitor g).symm.hom ≫ Bicategory.whiskerLeft g mf) ≫ (Bicategory.associator (obj n) g f).symm.hom
-      )
-    {obj := obj , map := map}
+    namespace Iterate2
+      def obj (f g : c ⟶ c) : ℕ → (c ⟶ c) := Nat.rec2r (𝟙 c) (fun r => f ≫ r) (fun r => g ≫ r)
 
-  def iterate2_property
-    {C : Type _} [Bicategory C] {c : C} {f g : c ⟶ c} {mf : 𝟙 c ⟶ f} {mg : 𝟙 c ⟶ g}
-    (P : (n : ℕ) → (c ⟶ c) → Sort _)
-    (p0 : P 0 (𝟙 c))
-    (ps0 : {n : ℕ} →  Even n → {a : c ⟶ c} → P n a → P n.succ (a ≫ f))
-    (ps1 : {n : ℕ} → ¬Even n → {a : c ⟶ c} → P n a → P n.succ (a ≫ g))
-    {n : ℕ}
-    : P n ((iterate2 f g mf mg).obj n)
-    := Nat.rec2_property (fun {n} => P n) p0 (fun {_}{e} => ps0 e) (fun {_}{e} => ps1 e) n
+      -- TODO: Is there a better way of defining this?
+      def map : (f g : c ⟶ c) → (𝟙 c ⟶ f) → (𝟙 c ⟶ g) → (n : ℕ) → Iterate2.obj f g n ⟶ Iterate2.obj f g n.succ
+      | f , _ , mf , _  , 0     => mf ≫ (Bicategory.rightUnitor f).symm.hom
+      | f , g , mf , mg , n + 1 => Bicategory.whiskerLeft f (Iterate2.map g f mg mf n)
+    end Iterate2
 
-  def iterate2_even_property
-    {C : Type _} [Bicategory C] {c : C} {f g : c ⟶ c} {mf : 𝟙 c ⟶ f} {mg : 𝟙 c ⟶ g}
-    (P : {n : ℕ} → Even n → (c ⟶ c) → Sort _)
-    (p0 : P Even.zero (𝟙 c))
-    (ps : {n : ℕ} → {e : Even n} → {a : c ⟶ c} → P e a → P (Nat.even_add_two.mpr e) ((a ≫ f) ≫ g))
-    : {n : ℕ} → (e : Even n) → P e ((iterate2 f g mf mg).obj n)
-    := Nat.rec2_even_property P p0 ps
+    def iterate2 (f g : c ⟶ c) (mf : 𝟙 c ⟶ f) (mg : 𝟙 c ⟶ g) : Seq (c ⟶ c) where
+      obj := Iterate2.obj f g
+      map := Iterate2.map f g mf mg
 
-  def iterate2_odd_property
-    {C : Type _} [Bicategory C] {c : C} {f g : c ⟶ c} {mf : 𝟙 c ⟶ f} {mg : 𝟙 c ⟶ g}
-    (P : {n : ℕ} → ¬Even n → (c ⟶ c) → Sort _)
-    (p1 : P (Nat.even_add_one'.mpr Even.zero) (𝟙 c ≫ f))
-    (ps : {n : ℕ} → {e : ¬Even n} → {a : c ⟶ c} → P e a → P (Nat.even_add_two.not.mpr e) ((a ≫ g) ≫ f))
-    : {n : ℕ} → (e : ¬Even n) → P e ((iterate2 f g mf mg).obj n)
-    := Nat.rec2_odd_property P p1 ps
+    namespace Iterate2
+      variable {f g : c ⟶ c}
+      variable {mf : 𝟙 c ⟶ f}
+      variable {mg : 𝟙 c ⟶ g}
 
+      def even_obj_property
+        (P : {n : ℕ} → Even n → (c ⟶ c) → Sort _)
+        (p0 : P Even.zero (𝟙 c))
+        (ps : {n : ℕ} → {e : Even n} → {a : c ⟶ c} → P e a → P (Nat.even_add_two.mpr e) (f ≫ g ≫ a))
+        : {n : ℕ} → (e : Even n) → P e ((iterate2 f g mf mg).obj n)
+        := Nat.rec2r_even_property P p0 ps
+
+      def odd_obj_property
+        (P : {n : ℕ} → ¬Even n → (c ⟶ c) → Sort _)
+        (p1 : P (Nat.even_add_one'.mpr Even.zero) (f ≫ 𝟙 c))
+        (ps : {n : ℕ} → {e : ¬Even n} → {a : c ⟶ c} → P e a → P (Nat.even_add_two.not.mpr e) (f ≫ g ≫ a))
+        : {n : ℕ} → (e : ¬Even n) → P e ((iterate2 f g mf mg).obj n)
+        := Nat.rec2r_odd_property P p1 ps
+    end Iterate2
+  end
 end Seq
 
 abbrev HasSeqColimit(s : Seq C) := HasColimit s.diagram
