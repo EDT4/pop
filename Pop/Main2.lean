@@ -71,7 +71,7 @@ section
         let Minf (x : C) : C :=
           let ηA := (Adjunction.toMonad (reflectorAdjunction F)).η.app
           let ηB := (Adjunction.toMonad (reflectorAdjunction G)).η.app
-          let M : ℕ → C := Nat.rec2 x (fun _ _ => TA.obj) (fun _ _ => TB.obj)
+          let M : ℕ → C := Nat.rec2l x (fun _ _ => TA.obj) (fun _ _ => TB.obj)
           let Mmap (n : ℕ) : M n ⟶ M (n + 1) :=
             Decidable.casesOn (Nat.instDecidablePredEven n)
               (fun (p : ¬Even n) => by
