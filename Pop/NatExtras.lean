@@ -1,8 +1,6 @@
 import Mathlib.Algebra.Group.Nat.Even
 import Mathlib.Algebra.Ring.Parity
 
-universe u
-
 def Nat.even_add_two
   {n : ℕ}
   : Even (n + 2) ↔ Even n
@@ -11,85 +9,165 @@ def Nat.even_add_two
 theorem Nat.even_add_one' {n : ℕ} : ¬Even n.succ ↔ Even n
   := Nat.even_add_one.symm.trans Nat.even_add_two
 
--- TODO: More difficult to prove stuff by this type of recursion?
-def Nat.rec2
-  {A : ℕ → Sort u}
+def Nat.rec2r
+  {A : ℕ → Sort _}
   (zero : A 0)
-  (succ0 : (n : ℕ) →  Even n → A n → A n.succ)
-  (succ1 : (n : ℕ) → ¬Even n → A n → A n.succ)
+  (succ0 : {n : ℕ} → A n → A n.succ)
+  (succ1 : {n : ℕ} → A n → A n.succ)
   : (n : Nat) → A n
   | 0     => zero
-  | n + 1 => Nat.rec2
+  | n + 1 => succ0 (Nat.rec2r zero succ1 succ0 n)
+
+def Nat.rec2r_even_property
+  {A : ℕ → Sort _}
+  {zero : A 0}
+  {succ0 : {n : ℕ} → A n → A n.succ}
+  {succ1 : {n : ℕ} → A n → A n.succ}
+  (P : {n : ℕ} → Even n → A n → Sort _)
+  (p0 : P Even.zero zero)
+  (ps : {n : ℕ} → {e : Even n} → {a : A n} → P e a → P (Nat.even_add_two.mpr e) (succ0 (succ1 a)))
+  : {n : ℕ} → (e : Even n) → P e (Nat.rec2r zero succ0 succ1 n)
+  | 0     , _ => p0
+  | 1     , e => by absurd e ; decide
+  | n + 2 , e => ps (Nat.rec2r_even_property P p0 ps (Nat.even_add_two.mp e))
+
+def Nat.rec2r_odd_property
+  {A : ℕ → Sort _}
+  {zero : A 0}
+  {succ0 : {n : ℕ} → A n → A n.succ}
+  {succ1 : {n : ℕ} → A n → A n.succ}
+  (P : {n : ℕ} → ¬Even n → A n → Sort _)
+  (p1 : P (Nat.even_add_one'.mpr Even.zero) (succ0 zero))
+  (ps : {n : ℕ} → {e : ¬Even n} → {a : A n} → P e a → P (Nat.even_add_two.not.mpr e) (succ0 (succ1 a)))
+  : {n : ℕ} → (e : ¬Even n) → P e (Nat.rec2r zero succ0 succ1 n)
+  | 0     , e => by absurd e ; decide
+  | 1     , _ => p1
+  | n + 2 , e => ps (Nat.rec2r_odd_property P p1 ps (Nat.even_add_two.not.mp e))
+
+def Nat.rec2l
+  {A : ℕ → Sort _}
+  (zero : A 0)
+  (succ0 : {n : ℕ} →  Even n → A n → A n.succ)
+  (succ1 : {n : ℕ} → ¬Even n → A n → A n.succ)
+  : (n : Nat) → A n
+  | 0     => zero
+  | n + 1 => Nat.rec2l
     (A := fun n => A n.succ)
-    (succ0 0 Even.zero zero)
-    (fun n e => succ1 n.succ (Nat.even_add_one'.mpr e))
-    (fun n e => succ0 n.succ (Nat.even_add_one.mpr e))
+    (succ0 Even.zero zero)
+    (fun e => succ1 (Nat.even_add_one'.mpr e))
+    (fun e => succ0 (Nat.even_add_one.mpr e))
     n
 
--- def Nat.rec2.even_case
---   {A : ℕ → Sort u}
---   {zero : A 0}
---   {succ0 : (n : ℕ) → Even n → A n → A n.succ}
---   {succ1 : (n : ℕ) → ¬Even n → A n → A n.succ}
---   {n : ℕ} (p :  Even n)
---   : Nat.rec2 zero succ0 succ1 n.succ.succ = succ1 n.succ (Nat.even_add_one'.mpr p) (succ0 n p (Nat.rec2 zero succ0 succ1 n))
---   := sorry
-
--- TODO: Probably not a good way of doing this
-def Nat.rec2_even_case
-  {A : ℕ → Sort u}
+def Nat.rec2l_property
+  {A : ℕ → Sort _}
   {zero : A 0}
-  {succ0 : (n : ℕ) → Even n → A n → A n.succ}
-  {succ1 : (n : ℕ) → ¬Even n → A n → A n.succ}
-  {n : ℕ} (p :  Even n)
-  : Nat.rec2 zero succ0 succ1 n.succ = succ0 n p (Nat.rec2 zero succ0 succ1 n)
-  :=
-    let r := Nat.rec2 zero succ0 succ1
-    -- TODO: Requires stronger recursion
-    Nat.rec2 (A := fun n => (p : Even n) → r n.succ = succ0 n p (r n))
-      (fun _ => rfl)
-      (fun _ p1 _ p2 => (Nat.even_add_one.mp p2 p1).elim)
-      (fun n o p e => sorry) n p
+  {succ0 : {n : ℕ} →  Even n → A n → A n.succ}
+  {succ1 : {n : ℕ} → ¬Even n → A n → A n.succ}
+  (P : {n : ℕ} → A n → Sort _)
+  (p0 : P zero)
+  (ps0 : {n : ℕ} → {e :  Even n} → {a : A n} → P a → P (succ0 e a))
+  (ps1 : {n : ℕ} → {e : ¬Even n} → {a : A n} → P a → P (succ1 e a))
+  : (n : ℕ) → P (Nat.rec2l zero succ0 succ1 n)
+  | 0     => p0
+  | n + 1 => Nat.rec2l_property P (ps0 p0) ps1 ps0 (n := n)
 
-def Nat.rec2_odd_case
-  {A : ℕ → Sort u}
+def Nat.rec2l_even_property
+  {A : ℕ → Sort _}
   {zero : A 0}
-  {succ0 : (n : ℕ) →  Even n → A n → A n.succ}
-  {succ1 : (n : ℕ) → ¬Even n → A n → A n.succ}
+  {succ0 : {n : ℕ} →  Even n → A n → A n.succ}
+  {succ1 : {n : ℕ} → ¬Even n → A n → A n.succ}
+  (P : {n : ℕ} → Even n → A n → Sort _)
+  (p0 : P Even.zero zero)
+  (ps : {n : ℕ} → {e : Even n} → {a : A n} → P e a → P (Nat.even_add_two.mpr e) (succ1 (Nat.even_add_one'.mpr e) (succ0 e a)))
+  {n : ℕ} (e : Even n)
+  : P e (Nat.rec2l zero succ0 succ1 n)
+  := match n with
+  | 0     => p0
+  | 1     => by absurd e ; decide
+  | n + 2 => Nat.rec2l_even_property
+    (fun e => P (Nat.even_add_two.mpr e))
+    (ps p0)
+    ps
+    (n := n)
+    (Nat.even_add_two.mp e)
+
+def Nat.rec2l_odd_property
+  {A : ℕ → Sort _}
+  {zero : A 0}
+  {succ0 : {n : ℕ} →  Even n → A n → A n.succ}
+  {succ1 : {n : ℕ} → ¬Even n → A n → A n.succ}
+  (P : {n : ℕ} → ¬Even n → A n → Sort _)
+  (p1 : P (Nat.even_add_one'.mpr Even.zero) (succ0 Even.zero zero))
+  (ps : {n : ℕ} → {e : ¬Even n} → {a : A n} → P e a → P (Nat.even_add_two.not.mpr e) (succ0 (Nat.even_add_one.mpr e) (succ1 e a)))
+  {n : ℕ} (e : ¬Even n)
+  : P e (Nat.rec2l zero succ0 succ1 n)
+  := match n with
+  | 0     => by absurd e ; decide
+  | 1     => p1
+  | n + 2 => Nat.rec2l_odd_property
+    (fun e => P (Nat.even_add_two.not.mpr e))
+    (ps p1)
+    ps
+    (n := n)
+    (Nat.even_add_two.not.mp e)
+
+lemma Nat.rec2l_even_step
+  {A : ℕ → Sort _}
+  {zero : A 0}
+  {succ0 : {n : ℕ} →  Even n → A n → A n.succ}
+  {succ1 : {n : ℕ} → ¬Even n → A n → A n.succ}
+  {n : ℕ} (p : Even n)
+  : Nat.rec2l zero succ0 succ1 n.succ = succ0 p (Nat.rec2l zero succ0 succ1 n)
+  := match n with
+  | 0     => rfl
+  | 1     => by absurd p ; decide
+  | n + 2 => Nat.rec2l_even_step
+    (A := fun n => A n.succ.succ)
+    (zero := succ1 (by decide) (succ0 Even.zero zero))
+    (succ0 := fun e => succ0 (Nat.even_add_two.mpr e))
+    (succ1 := fun e => succ1 (Nat.even_add_two.not.mpr e))
+    (n := n)
+    (Nat.even_add_two.mp p)
+  -- Nat.rec2_even_property
+  --   (fun {n} p a => Nat.rec2 zero succ0 succ1 n.succ = succ0 p a)
+  --   rfl
+  --   sorry
+
+def Nat.rec2l_odd_step
+  {A : ℕ → Sort _}
+  {zero : A 0}
+  {succ0 : {n : ℕ} →  Even n → A n → A n.succ}
+  {succ1 : {n : ℕ} → ¬Even n → A n → A n.succ}
   {n : ℕ} (p :  ¬Even n)
-  : Nat.rec2 zero succ0 succ1 n.succ = succ1 n p (Nat.rec2 zero succ0 succ1 n)
-  := sorry
+  : Nat.rec2l zero succ0 succ1 n.succ = succ1 p (Nat.rec2l zero succ0 succ1 n)
+  := match n with
+  | 0     => by absurd p ; decide
+  | 1     => rfl
+  | n + 2 => Nat.rec2l_odd_step
+    (A := fun n => A n.succ.succ)
+    (zero := succ1 (by decide) (succ0 Even.zero zero))
+    (succ0 := fun e => succ0 (Nat.even_add_two.mpr e))
+    (succ1 := fun e => succ1 (Nat.even_add_two.not.mpr e))
+    (n := n)
+    (Nat.even_add_two.not.mp p)
 
 
+mutual
+  variable {A : ℕ → Sort _}
+  variable (zero : A 0)
+  variable (succ0 : {n : ℕ} →  Even n → A n → A n.succ)
+  variable (succ1 : {n : ℕ} → ¬Even n → A n → A n.succ)
 
+  def Nat.rec2'_even : (n : Nat) → Even n → A n
+    | 0   , _ => zero
+    | n+1 , e =>
+      let e' := Nat.even_add_one.mp e
+      succ1 e' (Nat.rec2'_odd n e')
 
+  def Nat.rec2'_odd : (n : Nat) → ¬Even n → A n
+    | n+1 , e =>
+      let e' := Nat.even_add_one'.mp e
+      succ0 e' (Nat.rec2'_even n e')
 
-def Nat.rec2'
-  {A : ℕ → Sort u}
-  (zero : A 0)
-  (succ0 : (n : ℕ) →  Even n → A n → A n.succ)
-  (succ1 : (n : ℕ) → ¬Even n → A n → A n.succ)
-  : (n : Nat) → A n
-  := Nat.rec
-    zero
-    (fun n r => Decidable.casesOn (Nat.instDecidablePredEven n)
-      (fun (p : ¬Even n) => succ1 n p r)
-      (fun (p :  Even n) => succ0 n p r)
-    )
-
-def Nat.rec2'_even_case
-  {A : ℕ → Sort u}
-  {zero : A 0}
-  {succ0 : (n : ℕ) → Even n → A n → A n.succ}
-  {succ1 : (n : ℕ) → ¬Even n → A n → A n.succ}
-  {n : ℕ} (p :  Even n)
-  : Nat.rec2' zero succ0 succ1 n.succ = succ0 n p (Nat.rec2' zero succ0 succ1 n)
-  :=
-    let r := Nat.rec2' zero succ0 succ1
-    Nat.rec2' (A := fun n => (p : Even n) → r n.succ = succ0 n p (r n))
-      (fun _ => rfl)
-      (fun _ p1 _ p2 => (Nat.even_add_one.mp p2 p1).elim)
-      (fun n o p e => by exact Decidable.casesOn (Nat.instDecidablePredEven n) (fun o2 => sorry) (by aesop)) -- TODO: How to prove on casesOn?
-      n p
-
--- TODO: There is also this one, but the recursion looks weird? https://leanprover-community.github.io/mathlib4_docs/Mathlib/Data/Nat/EvenOddRec.html#Nat.evenOddRec
+  def Nat.rec2' (n : Nat) : A n := Decidable.casesOn (Nat.instDecidablePredEven n) (Nat.rec2'_odd n) (Nat.rec2'_even n)
+end
