@@ -15,8 +15,8 @@ def Nat.rec2r
   (succ0 : {n : ℕ} → A n → A n.succ)
   (succ1 : {n : ℕ} → A n → A n.succ)
   : (n : Nat) → A n
-  | 0     => zero
-  | n + 1 => succ0 (Nat.rec2r zero succ1 succ0 n)
+  | Nat.zero   => zero
+  | Nat.succ n => succ0 (Nat.rec2r zero succ1 succ0 n)
 
 def Nat.rec2r_even_property
   {A : ℕ → Sort _}
@@ -58,59 +58,6 @@ def Nat.rec2l
     (fun e => succ0 (Nat.even_add_one.mpr e))
     n
 
-def Nat.rec2l_property
-  {A : ℕ → Sort _}
-  {zero : A 0}
-  {succ0 : {n : ℕ} →  Even n → A n → A n.succ}
-  {succ1 : {n : ℕ} → ¬Even n → A n → A n.succ}
-  (P : {n : ℕ} → A n → Sort _)
-  (p0 : P zero)
-  (ps0 : {n : ℕ} → {e :  Even n} → {a : A n} → P a → P (succ0 e a))
-  (ps1 : {n : ℕ} → {e : ¬Even n} → {a : A n} → P a → P (succ1 e a))
-  : (n : ℕ) → P (Nat.rec2l zero succ0 succ1 n)
-  | 0     => p0
-  | n + 1 => Nat.rec2l_property P (ps0 p0) ps1 ps0 (n := n)
-
-def Nat.rec2l_even_property
-  {A : ℕ → Sort _}
-  {zero : A 0}
-  {succ0 : {n : ℕ} →  Even n → A n → A n.succ}
-  {succ1 : {n : ℕ} → ¬Even n → A n → A n.succ}
-  (P : {n : ℕ} → Even n → A n → Sort _)
-  (p0 : P Even.zero zero)
-  (ps : {n : ℕ} → {e : Even n} → {a : A n} → P e a → P (Nat.even_add_two.mpr e) (succ1 (Nat.even_add_one'.mpr e) (succ0 e a)))
-  {n : ℕ} (e : Even n)
-  : P e (Nat.rec2l zero succ0 succ1 n)
-  := match n with
-  | 0     => p0
-  | 1     => by absurd e ; decide
-  | n + 2 => Nat.rec2l_even_property
-    (fun e => P (Nat.even_add_two.mpr e))
-    (ps p0)
-    ps
-    (n := n)
-    (Nat.even_add_two.mp e)
-
-def Nat.rec2l_odd_property
-  {A : ℕ → Sort _}
-  {zero : A 0}
-  {succ0 : {n : ℕ} →  Even n → A n → A n.succ}
-  {succ1 : {n : ℕ} → ¬Even n → A n → A n.succ}
-  (P : {n : ℕ} → ¬Even n → A n → Sort _)
-  (p1 : P (Nat.even_add_one'.mpr Even.zero) (succ0 Even.zero zero))
-  (ps : {n : ℕ} → {e : ¬Even n} → {a : A n} → P e a → P (Nat.even_add_two.not.mpr e) (succ0 (Nat.even_add_one.mpr e) (succ1 e a)))
-  {n : ℕ} (e : ¬Even n)
-  : P e (Nat.rec2l zero succ0 succ1 n)
-  := match n with
-  | 0     => by absurd e ; decide
-  | 1     => p1
-  | n + 2 => Nat.rec2l_odd_property
-    (fun e => P (Nat.even_add_two.not.mpr e))
-    (ps p1)
-    ps
-    (n := n)
-    (Nat.even_add_two.not.mp e)
-
 lemma Nat.rec2l_even_step
   {A : ℕ → Sort _}
   {zero : A 0}
@@ -133,7 +80,7 @@ lemma Nat.rec2l_even_step
   --   rfl
   --   sorry
 
-def Nat.rec2l_odd_step
+lemma Nat.rec2l_odd_step
   {A : ℕ → Sort _}
   {zero : A 0}
   {succ0 : {n : ℕ} →  Even n → A n → A n.succ}

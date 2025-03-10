@@ -52,36 +52,36 @@ instance category : Category (LaxPullbackThing L R) where
     middle := f.middle ≫ g.middle
   }
 
-variable (L) (R)
+section
+  variable (L) (R)
 
-@[simps]
-def leftFunctor : LaxPullbackThing L R ⥤ A where
-  obj X := X.left
-  map f := f.left
+  @[simps]
+  def leftFunctor : LaxPullbackThing L R ⥤ A where
+    obj X := X.left
+    map f := f.left
 
-@[simps]
-def rightFunctor : LaxPullbackThing L R ⥤ B where
-  obj X := X.right
-  map f := f.right
+  @[simps]
+  def rightFunctor : LaxPullbackThing L R ⥤ B where
+    obj X := X.right
+    map f := f.right
 
-@[simps]
-def middleFunctor : LaxPullbackThing L R ⥤ C where
-  obj X := X.middle
-  map f := f.middle
+  @[simps]
+  def middleFunctor : LaxPullbackThing L R ⥤ C where
+    obj X := X.middle
+    map f := f.middle
 
-def llm : NatTrans (leftFunctor L R ⋙ L) (middleFunctor L R) where
-  app := homl
+  def llm : NatTrans (leftFunctor L R ⋙ L) (middleFunctor L R) where
+    app := homl
 
-def rrm : NatTrans (rightFunctor L R ⋙ R) (middleFunctor L R) where
-  app := homr
+  def rrm : NatTrans (rightFunctor L R ⋙ R) (middleFunctor L R) where
+    app := homr
+end
 
-variable {L R} {X Y : LaxPullbackThing L R} (f : X ⟶ Y)
+section
+  variable {P₁ P₂ : LaxPullbackThing L R}
+  variable (f : P₁ ⟶ P₂)
 
-instance [IsIso f] : IsIso f.left
-  := (leftFunctor L R).map_isIso f
-
-instance [IsIso f] : IsIso f.right
-  := (rightFunctor L R).map_isIso f
-
-instance [IsIso f] : IsIso f.middle
-  := (middleFunctor L R).map_isIso f
+  instance [IsIso f] : IsIso f.left   := (leftFunctor   L R).map_isIso f
+  instance [IsIso f] : IsIso f.right  := (rightFunctor  L R).map_isIso f
+  instance [IsIso f] : IsIso f.middle := (middleFunctor L R).map_isIso f
+end
