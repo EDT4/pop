@@ -1,4 +1,5 @@
 import Mathlib.CategoryTheory.Comma.Over.Basic
+import Mathlib.CategoryTheory.FiberedCategory.Fiber
 import Mathlib.CategoryTheory.Functor.OfSequence
 import Mathlib.CategoryTheory.Monad.Limits
 import Mathlib.Data.Nat.EvenOddRec
@@ -9,6 +10,7 @@ import Pop.NatExtras
 namespace CategoryTheory.Limits
 
 open CategoryTheory
+open CategoryTheory.Functor
 open CategoryTheory.Limits
 
 variable {C C₁ C₂ : Type _}
@@ -42,7 +44,7 @@ structure Seq (C : Type _) [Quiver C] where
 namespace Seq
   abbrev const (c : C) : Seq C := .mk (fun _ => c) (fun _ => 𝟙 c)
   abbrev step (s : Seq C) : Seq C := .mk (s.obj ∘ Nat.succ) (fun n => s.map (Nat.succ n))
-  abbrev add (k : ℕ) (s : Seq C) : Seq C := Nat.iterate step k s
+  abbrev add (k : ℕ) (s : Seq C) : Seq C := Nat.rec s (fun _ => step) k
   abbrev prepend (s : Seq C) (e : Over (s.obj 0)) : Seq C where
     obj n := Nat.casesAuxOn n e.left s.obj
     map n := Nat.casesAuxOn n e.hom  s.map
@@ -171,33 +173,30 @@ namespace Seq
     namespace Iterate2
       def obj (f g : c ⟶ c) : ℕ → (c ⟶ c) := Nat.rec2r (𝟙 c) (fun r => f ≫ r) (fun r => g ≫ r)
 
-      -- TODO: Is there a better way of defining this?
-      def map : (f g : c ⟶ c) → (𝟙 c ⟶ f) → (𝟙 c ⟶ g) → (n : ℕ) → Iterate2.obj f g n ⟶ Iterate2.obj f g n.succ
-      | f , _ , mf , _  , 0     => mf ≫ (Bicategory.rightUnitor f).symm.hom
-      | f , g , mf , mg , n + 1 => Bicategory.whiskerLeft f (Iterate2.map g f mg mf n)
+      def map : (f g : (m : c ⟶ c) × (𝟙 c ⟶ m)) → (n : ℕ) → Iterate2.obj f.1 g.1 n ⟶ Iterate2.obj f.1 g.1 n.succ
+      | f , _  , 0     => f.2 ≫ (Bicategory.rightUnitor f.1).symm.hom
+      | f , g  , n + 1 => Bicategory.whiskerLeft f.1 (Iterate2.map g f n)
     end Iterate2
 
-    def iterate2 (f g : c ⟶ c) (mf : 𝟙 c ⟶ f) (mg : 𝟙 c ⟶ g) : Seq (c ⟶ c) where
-      obj := Iterate2.obj f g
-      map := Iterate2.map f g mf mg
+    def iterate2 (f g : (m : c ⟶ c) × (𝟙 c ⟶ m)) : Seq (c ⟶ c) where
+      obj := Iterate2.obj f.1 g.1
+      map := Iterate2.map f g
 
     namespace Iterate2
-      variable {f g : c ⟶ c}
-      variable {mf : 𝟙 c ⟶ f}
-      variable {mg : 𝟙 c ⟶ g}
+      variable {f g : (m : c ⟶ c) × (𝟙 c ⟶ m)}
 
       def even_obj_property
         (P : {n : ℕ} → Even n → (c ⟶ c) → Sort _)
         (p0 : P Even.zero (𝟙 c))
-        (ps : {n : ℕ} → {e : Even n} → {a : c ⟶ c} → P e a → P (Nat.even_add_two.mpr e) (f ≫ g ≫ a))
-        : {n : ℕ} → (e : Even n) → P e ((iterate2 f g mf mg).obj n)
+        (ps : {n : ℕ} → {e : Even n} → {a : c ⟶ c} → P e a → P (Nat.even_add_two.mpr e) (f.1 ≫ g.1 ≫ a))
+        : {n : ℕ} → (e : Even n) → P e ((iterate2 f g).obj n)
         := Nat.rec2r_even_property P p0 ps
 
       def odd_obj_property
         (P : {n : ℕ} → ¬Even n → (c ⟶ c) → Sort _)
-        (p1 : P (Nat.even_add_one'.mpr Even.zero) (f ≫ 𝟙 c))
-        (ps : {n : ℕ} → {e : ¬Even n} → {a : c ⟶ c} → P e a → P (Nat.even_add_two.not.mpr e) (f ≫ g ≫ a))
-        : {n : ℕ} → (e : ¬Even n) → P e ((iterate2 f g mf mg).obj n)
+        (p1 : P (Nat.even_add_one'.mpr Even.zero) (f.1 ≫ 𝟙 c))
+        (ps : {n : ℕ} → {e : ¬Even n} → {a : c ⟶ c} → P e a → P (Nat.even_add_two.not.mpr e) (f.1 ≫ g.1 ≫ a))
+        : {n : ℕ} → (e : ¬Even n) → P e ((iterate2 f g).obj n)
         := Nat.rec2r_odd_property P p1 ps
     end Iterate2
   end
@@ -388,8 +387,3 @@ noncomputable def seqColim.congrHom
 -- 3.5.5
 instance seqColim.map_isIso [IsIso t] : IsIso (seqColim.map t)
   := ⟨seqColim.map (inv t) , by constructor <;> (rw [map_comp] ; aesop_cat)⟩
-
--- def iterate_comp
---   {f g : Functor C C}{m₁ : NatTrans (𝟭 C) (f ⋙ g)}{m₂ : NatTrans (𝟭 C) (g ⋙ f)} [HasSeqColimits (Functor C C)]
---   : seqColim (Seq.iterate (f ⋙ g) m₁) ≅ seqColim (Seq.iterate (g ⋙ f) m₂)
---   := sorry
