@@ -5,6 +5,8 @@ import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
 import Mathlib.CategoryTheory.Monad.Basic
 import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 import Mathlib.Data.Set.Defs
+import Mathlib.Logic.Function.Defs
+import Pop.CategoryTheory.Adjunction.MkExtras
 import Pop.CategoryTheory.Limits.Shapes.SeqColimit
 import Pop.NatCategoryExtras
 import Pop.NatExtras
@@ -18,114 +20,130 @@ open CategoryTheory
 open CategoryTheory.ObjectProperty
 open CategoryTheory.Limits
 
-variable {C : Type _}
-variable [Category C]
--- TODO: Change these later
--- variable [HasPullbacks C]
--- variable [HasPushouts C]
-variable [HasSeqColimits C]
-
-namespace Adjunction.CoreEtaInvertibleHom
-  variable {C₁ C₂ : Type _}
-  variable [Category C₁]
-  variable [Category C₂]
-  variable {F : Functor C₁ C₂}
-  variable {G : Functor C₂ C₁}
-  variable (η : 𝟭 C₁ ⟶ F ⋙ G)
-
-  abbrev hom {c₁ : C₁} {c₂ : C₂} : (F.obj c₁ ⟶ c₂) → (c₁ ⟶ G.obj c₂)
-    := fun f => η.app c₁ ≫ G.map f
-
-  def mk
-    (invHom : ∀{c₁ : C₁}{c₂ : C₂}, (c₁ ⟶ G.obj c₂) → (F.obj c₁ ⟶ c₂))
-    (left_inv  : ∀{c₁}{c₂}, Function.LeftInverse  invHom (hom η (c₁ := c₁) (c₂ := c₂)))
-    (right_inv : ∀{c₁}{c₂}, Function.RightInverse invHom (hom η (c₁ := c₁) (c₂ := c₂)))
-    : F ⊣ G
-    :=
-      Adjunction.mkOfHomEquiv {
-        homEquiv := fun _ _ => .mk (hom η) invHom left_inv right_inv
-        homEquiv_naturality_left_symm := by
-          intro c₁₁ c₁₂ c₂ f g
-          simp
-          apply_fun hom η
-          . rw [right_inv]
-            simp [hom]
-            rewrite [← Category.assoc , ← Functor.comp_map , ← η.naturality f]
-            simp
-            congr
-            change g = hom η (invHom g)
-            rw [right_inv]
-          . exact Function.LeftInverse.injective left_inv
-        homEquiv_naturality_right := by simp [hom]
-      }
-end Adjunction.CoreEtaInvertibleHom
-
 local instance temp : (Nat.Functor.mulr 2).Final := Nat.Functor.mulr_final -- TODO: Cannot find this instance?
 
-section
-  variable (A : Set C)
-  variable [IsClosedUnderIsomorphisms A]
-  variable [Reflective (fullSubcategoryInclusion A)] -- TODO: Reflective includes full and faithful, but it is already implied by the full subcategory.
-  variable (closed_a : ClosedUnderColimitsOfShape ℕ A)
-  variable (B : Set C)
-  variable [IsClosedUnderIsomorphisms B]
-  variable [Reflective (fullSubcategoryInclusion B)]
-  variable (closed_b : ClosedUnderColimitsOfShape ℕ B)
+variable {C : Type _}
+variable [cat : Category C]
+variable [hsc : HasSeqColimits C] -- TODO: Reason for noncomputable. Maybe change later? It seems like most stuff is built on using limit/colimit instead of the cones directly though.
+variable (A : Set C)
+variable (B : Set C)
+variable [ra : Reflective (fullSubcategoryInclusion A)] -- TODO: Reflective includes full and faithful, but it is already implied by the full subcategory.
+variable [rb : Reflective (fullSubcategoryInclusion B)]
+variable (closed_a : ClosedUnderColimitsOfShape ℕ A)
+variable (closed_b : ClosedUnderColimitsOfShape ℕ B)
+variable [cia : IsClosedUnderIsomorphisms A]
+variable [cib : IsClosedUnderIsomorphisms B]
+omit [_]
 
-  def fullSubcategoryMonad := (reflectorAdjunction (fullSubcategoryInclusion A)).toMonad
+def fullSubcategoryMonad := (reflectorAdjunction (fullSubcategoryInclusion A)).toMonad
 
-  -- TODO: This is just temporary and is very unorganised. Not proper. Also rename stuff when the proof is finished
-  namespace IntersectionReflective
-    def sequence : Limits.Seq (C ⥤ C) :=
-      let TA := fullSubcategoryMonad A
-      let TB := fullSubcategoryMonad B
-      Seq.iterate2 (c := Cat.of C) TA.toFunctor TB.toFunctor TA.η TB.η
+-- TODO: Rename stuff when the proof is finished
+namespace IntersectionReflective
+  def sequence : Limits.Seq (C ⥤ C) :=
+    let TA := fullSubcategoryMonad A
+    let TB := fullSubcategoryMonad B
+    Seq.iterate2 (c := Cat.of C) (.mk TA.toFunctor TA.η) (.mk TB.toFunctor TB.η)
 
-    noncomputable abbrev Minf : C ⥤ C := seqColim (sequence A B) -- TODO: Change later to computable
-    notation "M∞" => Minf
+  section include C cat A B ra rb
+  lemma sequence_odd {n} : ∀{c}, A (((sequence A B).obj (n * 2 + 1)).obj c) := by
+    induction n
+    . exact FullSubcategory.property _
+    . rw [Nat.add_mul]
+      intro
+      apply_assumption
+  lemma sequence_even {n} : ∀{c}, B (((sequence A B).obj (n * 2 + 2)).obj c) := sequence_odd B A
+  end
 
-    variable {A B}
+  noncomputable abbrev Minf : C ⥤ C := colimit (sequence A B).diagram
+  notation "M∞" => Minf
 
-    -- TODO: inA and inB almost uses the same arguments and should be generalised in the future
-    -- TODO: Also split this into smaller stuff
-    lemma inA (closed_a : ClosedUnderColimitsOfShape ℕ A) : ∀(c : C), A ((M∞ A B).obj c) := by
-      intro c
-      apply IsClosedUnderIsomorphisms.of_iso ((colimitIsoFlipCompColim _).app c).symm
-      apply IsClosedUnderIsomorphisms.of_iso (Functor.Final.colimitIso (Nat.Functor.mulr 2 ⋙ Nat.Functor.succ) _)
-      apply ClosedUnderColimitsOfShape.colimit closed_a
-      simp [Nat.Functor.mulr]
-      intro n
-      induction n generalizing A B c
-      . exact FullSubcategory.property _
-      . rw [Nat.add_mul] ; apply_assumption ; assumption
+  variable {A B}
 
-    lemma inB (closed_b : ClosedUnderColimitsOfShape ℕ B) : ∀(c : C), B ((M∞ A B).obj c) := by
-      intro c
-      apply IsClosedUnderIsomorphisms.of_iso ((colimitIsoFlipCompColim _).app c).symm
-      apply IsClosedUnderIsomorphisms.of_iso (Functor.Final.colimitIso (Nat.Functor.mulr 2 ⋙ Nat.Functor.succ ⋙ Nat.Functor.succ) _)
-      apply ClosedUnderColimitsOfShape.colimit closed_b
-      simp [Nat.Functor.mulr]
-      intro n
-      induction n generalizing A B c
-      . exact FullSubcategory.property _
-      . rw [Nat.add_mul] ; apply_assumption ; assumption
+  -- TODO: Almost uses the same arguments. Maybe possible to generalise?
+  section include C cat A B ra rb hsc cia closed_a
+  lemma Minf_in_left (c : C) : A ((M∞ A B).obj c) := by
+    apply IsClosedUnderIsomorphisms.of_iso ((colimitIsoFlipCompColim _).app c).symm
+    apply IsClosedUnderIsomorphisms.of_iso (Functor.Final.colimitIso (Nat.Functor.mulr 2 ⋙ Nat.Functor.succ) _)
+    apply ClosedUnderColimitsOfShape.colimit closed_a
+    intro
+    apply sequence_odd
+  end
 
-    noncomputable abbrev L := FullSubcategory.lift (A ∩ B : Set C) (M∞ A B) (fun c => .intro (inA closed_a c) (inB closed_b c))
-    abbrev l {c} : (L closed_a closed_b).obj ((fullSubcategoryInclusion (A ∩ B : Set C)).obj c) ⟶ c
-      := by simp [L] ; sorry
-  end IntersectionReflective
+  section include C cat A B ra rb hsc cib closed_b
+  lemma Minf_in_right (c : C) : B ((M∞ A B).obj c) := by
+    apply IsClosedUnderIsomorphisms.of_iso ((colimitIsoFlipCompColim _).app c).symm
+    apply IsClosedUnderIsomorphisms.of_iso (Functor.Final.colimitIso (Nat.Functor.mulr 2 ⋙ Nat.Functor.succ ⋙ Nat.Functor.succ) _)
+    apply ClosedUnderColimitsOfShape.colimit closed_b
+    intro
+    apply sequence_even
+  end
 
-  noncomputable def intersectionReflective : Reflective (fullSubcategoryInclusion (A ∩ B : Set C)) :=
-    let L := IntersectionReflective.L closed_a closed_b
-    let l := IntersectionReflective.l closed_a closed_b
-    {
-      L := L
-      adj := Adjunction.CoreEtaInvertibleHom.mk
-        (seqColim.ι (IntersectionReflective.sequence A B) 0)
-        (fun f => L.map f ≫ l) -- TODO: Either construct this directly or just prove that Adjunction.CoreHom.hom is bijective from the full faithful functors
-        sorry
-        sorry
-    }
-end
+  noncomputable abbrev L := FullSubcategory.lift
+    (A ∩ B : Set C)
+    (M∞ A B)
+    (fun c => .intro (Minf_in_left closed_a c) (Minf_in_right closed_b c))
+
+  def ta' : (sequence A B).obj 1 ⟶ (sequence A B).obj 0 := by
+    simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r,fullSubcategoryMonad]
+    constructor
+    . sorry
+    . intro ; simp ; sorry
+
+  def ta {n} : (sequence A B).obj n ⟶ (sequence A B).obj n.succ
+    := (sequence A B).map n
+
+  def test2 {n} : (sequence A B).obj (n + 2) ⟶ (sequence A B).obj n := by
+    simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r]
+    rewrite [← Category.assoc]
+    rewrite [← Category.id_comp]
+    exact whiskerRight sorry ((sequence A B).obj n)
+
+  def test {n} : (sequence A B).obj (n + 1) ⟶ (sequence A B).obj n := by
+    simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r]
+    sorry
+
+  noncomputable abbrev l : M∞ A B ⟶ 𝟭 C :=
+    colimit.desc
+      (sequence A B).diagram
+      (.mk (𝟭 C) (NatTrans.ofSequence
+        (Nat.rec (𝟙 (𝟭 C)) (fun _ => (test ≫·)))
+        (by simp ; sorry)
+      ))
+
+  -- noncomputable abbrev l {c} : (M∞ A B).obj c ⟶ c :=
+  --     -- TODO: Organise
+  --   let a := ((colimitIsoFlipCompColim (sequence A B).diagram).app c).hom
+  --   let b := colimit.desc ((sequence A B).diagram.flip.obj c) (.mk c (NatTrans.ofSequence
+  --     (by -- TODO: generalise and separate
+  --       simp
+  --       intro n
+  --       induction n generalizing A B c with
+  --       | zero => exact 𝟙 c
+  --       | succ n r =>
+  --         apply (·≫·)
+  --         . apply r (A := A) (B:= B)
+  --         . sorry
+  --       -- induction n
+  --       -- . exact 𝟙 c
+  --       -- . apply (·≫·)
+  --       --   . assumption
+  --       --   . simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r]
+  --       --     sorry
+  --     )
+  --     (by simp ; sorry)
+  --   ))
+  --   a ≫ b
+end IntersectionReflective
+
+noncomputable def intersectionReflective : Reflective (fullSubcategoryInclusion (A ∩ B : Set C)) :=
+  let L := IntersectionReflective.L closed_a closed_b
+  {
+    L := L
+    adj := Adjunction.CoreEtaInvertibleHom.mk
+      (seqColim.ι (IntersectionReflective.sequence A B) 0)
+      (fun f => L.map f ≫ IntersectionReflective.l.app _) -- TODO: Either construct this directly or just prove that Adjunction.CoreHom.hom is bijective from the full faithful functors
+      (fun f => sorry)
+      (fun f => sorry)
+  }
 
 end
