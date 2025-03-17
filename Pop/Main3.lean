@@ -6,6 +6,8 @@ import Mathlib.CategoryTheory.Monad.Basic
 import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 import Mathlib.Data.Set.Defs
 import Mathlib.Logic.Function.Defs
+import Mathlib.Order.Monotone.Basic
+import Mathlib.Order.Monotone.Defs
 import Pop.CategoryTheory.Adjunction.MkExtras
 import Pop.CategoryTheory.Limits.Shapes.SeqColimit
 import Pop.CategoryTheory.OplaxPullbackThing
@@ -60,11 +62,10 @@ namespace IntersectionReflective
 
   variable {A B}
 
-  -- TODO: Almost uses the same arguments. Maybe possible to generalise?
   section include C cat A B ra rb hsc cia closed_a
   lemma Minf_in_left (c : C) : A ((M∞ A B).obj c) := by
     apply IsClosedUnderIsomorphisms.of_iso ((colimitIsoFlipCompColim _).app c).symm
-    apply IsClosedUnderIsomorphisms.of_iso (Functor.Final.colimitIso (Nat.Functor.mulr 2 ⋙ Nat.Functor.succ) _)
+    apply IsClosedUnderIsomorphisms.of_iso (Nat.StrictMono.comp_seqColim_iso (·*2+1) (StrictMono.add_const (StrictMono.mul_const strictMono_id (by decide)) _))
     apply ClosedUnderColimitsOfShape.colimit closed_a
     intro
     apply sequence_odd
@@ -73,7 +74,7 @@ namespace IntersectionReflective
   section include C cat A B ra rb hsc cib closed_b
   lemma Minf_in_right (c : C) : B ((M∞ A B).obj c) := by
     apply IsClosedUnderIsomorphisms.of_iso ((colimitIsoFlipCompColim _).app c).symm
-    apply IsClosedUnderIsomorphisms.of_iso (Functor.Final.colimitIso (Nat.Functor.mulr 2 ⋙ Nat.Functor.succ ⋙ Nat.Functor.succ) _)
+    apply IsClosedUnderIsomorphisms.of_iso (Nat.StrictMono.comp_seqColim_iso (·*2+2) (StrictMono.add_const (StrictMono.mul_const strictMono_id (by decide)) _))
     apply ClosedUnderColimitsOfShape.colimit closed_b
     intro
     apply sequence_even

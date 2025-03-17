@@ -1,4 +1,3 @@
-import Init.WF
 import Mathlib.Algebra.Order.Floor.Div
 import Mathlib.Algebra.Order.Monoid.Unbundled.Pow
 import Mathlib.CategoryTheory.Adjunction.Basic
@@ -9,10 +8,6 @@ import Mathlib.CategoryTheory.Limits.Final
 import Mathlib.CategoryTheory.Limits.HasLimits
 import Mathlib.Logic.Encodable.Basic
 import Mathlib.Data.Nat.SuccPred
-import Mathlib.Order.Category.Preord
-import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Order.SuccPred.Basic
-import Mathlib.Order.WellFounded
 import Mathlib.Data.Fin.Basic
 import Mathlib.Data.Fintype.Defs
 
@@ -21,7 +16,7 @@ open CategoryTheory.Limits
 
 namespace Nat.StrictMono
   variable (f : ℕ → ℕ)
-  variable (smono : StrictMono f)
+  variable (smono : StrictMono f := by decide)
   include f smono
 
   abbrev condition (n : ℕ) : Set ℕ := fun x : ℕ => f x ≥ n
