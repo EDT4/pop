@@ -8,6 +8,7 @@ import Mathlib.Data.Set.Defs
 import Mathlib.Logic.Function.Defs
 import Pop.CategoryTheory.Adjunction.MkExtras
 import Pop.CategoryTheory.Limits.Shapes.SeqColimit
+import Pop.CategoryTheory.OplaxPullbackThing
 import Pop.NatCategoryExtras
 import Pop.NatExtras
 import Pop.Util
@@ -92,11 +93,11 @@ namespace IntersectionReflective
   def ta {n} : (sequence A B).obj n ⟶ (sequence A B).obj n.succ
     := (sequence A B).map n
 
-  def test2 {n} : (sequence A B).obj (n + 2) ⟶ (sequence A B).obj n := by
-    simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r]
-    rewrite [← Category.assoc]
-    rewrite [← Category.id_comp]
-    exact whiskerRight sorry ((sequence A B).obj n)
+  -- def test2 {n} : (sequence A B).obj (n + 2) ⟶ (sequence A B).obj n := by
+  --   simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r]
+  --   rewrite [← Category.assoc]
+  --   rewrite [← Category.id_comp]
+  --   exact whiskerRight sorry ((sequence A B).obj n)
 
   def test {n} : (sequence A B).obj (n + 1) ⟶ (sequence A B).obj n := by
     simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r]
@@ -145,5 +146,17 @@ noncomputable def intersectionReflective : Reflective (fullSubcategoryInclusion 
       (fun f => sorry)
       (fun f => sorry)
   }
+
+namespace FutureTodos
+  variable {A : Type _} [Category A]
+  variable {B : Type _} [Category B]
+  variable {C : Type _} [Category C]
+  variable {L : A ⥤ C}
+  variable {R : B ⥤ C}
+
+  def Pl  : Set (OplaxPullbackThing L R) := fun p => IsIso p.homl
+  def Pr  : Set (OplaxPullbackThing L R) := fun p => IsIso p.homr
+  def Plr : Set (OplaxPullbackThing L R) := Pl ∩ Pr
+end FutureTodos
 
 end
