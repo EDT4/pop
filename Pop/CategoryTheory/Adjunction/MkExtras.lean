@@ -45,4 +45,37 @@ namespace CategoryTheory.Adjunction.CoreEtaInvertibleHom
   noncomputable def mkBijective (bij : ∀{c₁}{c₂}, Function.Bijective (hom η (c₁ := c₁) (c₂ := c₂))) : L ⊣ R :=
     let e {c₁}{c₂} := Equiv.ofBijective (hom η (c₁ := c₁) (c₂ := c₂)) bij
     mk η e.invFun e.left_inv e.right_inv
-end Adjunction.CoreEtaInvertibleHom
+end CategoryTheory.Adjunction.CoreEtaInvertibleHom
+
+-- namespace CategoryTheory.Adjunction.FullCategory
+--   variable {C : Type _}
+--   variable [Category C]
+--   variable {A : Set C}
+--
+--   noncomputable def mk
+--     (L : C ⥤ FullSubcategory A)
+--     (η : 𝟭 C ⟶ L ⋙ fullSubcategoryInclusion A)
+--     [i : ∀(a : FullSubcategory A), IsIso (η.app a.obj)]
+--     : L ⊣ fullSubcategoryInclusion A
+--     where
+--       unit := η
+--       counit := .mk
+--         (fun a => have y := inv (η.app a.obj) ; y)
+--         (by
+--           intro X Y f
+--           simp_all only [Functor.comp_obj, fullSubcategoryInclusion.obj, Functor.id_obj, Functor.comp_map, fullSubcategoryInclusion.map, Functor.id_map]
+--           apply (IsIso.comp_inv_eq (η.app Y.obj)).mpr
+--           apply (Eq.trans · (Category.assoc _ _ _).symm)
+--           apply (IsIso.eq_inv_comp (η.app X.obj)).mpr
+--           apply (Eq.trans · (η.naturality (X := X.obj) (Y := Y.obj) f).symm)
+--           apply congr_arg (η.app X.obj ≫ ·)
+--           simp only [Functor.comp_map, fullSubcategoryInclusion.map]
+--         )
+--       left_triangle_components := by
+--         intro c
+--         simp
+--         apply (Eq.trans · (CategoryTheory.IsIso.hom_inv_id (η.app (L.obj c).obj)))
+--         apply congr_arg (· ≫ inv (η.app (L.obj c).obj))
+--         let nn := η.naturality (X := c) (Y := (L.obj c).obj) (η.app c)
+--         sorry -- TODO: ?
+-- end CategoryTheory.Adjunction.FullCategory
