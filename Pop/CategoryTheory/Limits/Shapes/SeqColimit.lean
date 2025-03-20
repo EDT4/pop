@@ -83,9 +83,9 @@ namespace Seq
     (fstep : ∀{a b : ℕ}{o1 : a ⟶ b}{o2 : a.succ ⟶ b.succ}, (s.diagram.map o1 = f o1) → (s.step.diagram.map o1 = f o2))
     : ∀{a b : ℕ} (o : a ⟶ b), s.diagram.map o = f o
     := by
-      simp [const , diagram]
+      simp only [diagram, ofSequence_obj]
       let rec i a b (o : a ⟶ b) : (Functor.ofSequence s.map).map o = f o := match a , b with
-        | 0 , 0 => by simp [diagram_map_id , fid]
+        | 0 , 0 => by simp only [ofSequence_obj, diagram_map_id, fid]
         | 0 , Nat.succ b => by
           rewrite [diagram_map_succ_is_comp_map s 0 b (o1 := o) (o2 := homOfLE (by omega))]
           rewrite [i 0 b (homOfLE (by omega))]
@@ -103,7 +103,7 @@ namespace Seq
     := diagram_map_ext (Seq.const c) (fun _ => 𝟙 c) rfl (by aesop_cat) (fun p => p)
 
   lemma diagram_const {c : C} : (Seq.const c).diagram = (Functor.const ℕ).obj c := by
-    simp [Functor.ofSequence , Functor.const]
+    simp only [ofSequence, Functor.const, Functor.mk.injEq, Prefunctor.mk.injEq, heq_eq_eq, true_and]
     ext i j o
     exact diagram_map_const c o
 
@@ -232,7 +232,7 @@ namespace SeqColimCocone
     (eq : ∀(n : ℕ), s.map n ≫ p (Nat.succ n) = p n)
     : SeqColimCocone s where
     pt := W
-    ι := NatTrans.ofSequence (F := s.diagram) (G := (Functor.const ℕ).obj W) p (by simp [s.diagram_map_is_map,eq])
+    ι := NatTrans.ofSequence (F := s.diagram) (G := (Functor.const ℕ).obj W) p (by simp only [ofSequence_obj, const_obj_obj, homOfLE_leOfHom, s.diagram_map_is_map, eq, const_obj_map, Category.comp_id, implies_true])
 
   abbrev ι (t : SeqColimCocone s) (n : ℕ) : s.obj n ⟶ t.pt
     := (Cocone.ι t).app n
@@ -262,18 +262,19 @@ namespace SeqColimCocone
       (fun s => ht.desc (unstep s))
       (by
         intro t' n
-        simp [step , mk , unstep , ι]
+        simp only [ofSequence_obj, Function.comp_apply, Nat.succ_eq_add_one, step, ι, mk,
+          const_obj_obj, NatTrans.ofSequence_app, unstep, IsColimit.fac]
         exact condition n (t := t')
       )
       (by
         intro t' f e
-        simp [mk , unstep , ι]
+        simp only [unstep, Nat.succ_eq_add_one, ι, mk]
         apply IsColimit.hom_ext ht
         intro n
-        simp
+        simp only [ofSequence_obj, const_obj_obj, IsColimit.fac, NatTrans.ofSequence_app]
         rewrite [(e n).symm]
-        simp [step , mk , ι]
-        simp [condition_assoc n (t := t) f]
+        simp only [ofSequence_obj, Function.comp_apply, Nat.succ_eq_add_one, step, ι, mk, const_obj_obj, NatTrans.ofSequence_app]
+        simp only [condition_assoc n (t := t) f]
       )
 
   def unstepIsColimit {t : SeqColimCocone s.step} (ht : IsColimit t) : IsColimit t.unstep
@@ -281,18 +282,18 @@ namespace SeqColimCocone
       (fun s => ht.desc (step s))
       (by
         intro t' n
-        simp [step , mk , unstep , ι]
+        simp only [ofSequence_obj, unstep, Nat.succ_eq_add_one, ι, mk, const_obj_obj, NatTrans.ofSequence_app, step, Category.assoc, IsColimit.fac]
         exact condition n (t := t')
       )
       (by
         intro t' f e
-        simp [mk , step , ι]
+        simp only [step, Nat.succ_eq_add_one, ι, mk]
         apply IsColimit.hom_ext ht
         intro n
-        simp
+        simp only [ofSequence_obj, Function.comp_apply, Nat.succ_eq_add_one, const_obj_obj, IsColimit.fac, NatTrans.ofSequence_app]
         rewrite [(e n.succ).symm]
-        simp [unstep , mk , ι]
-        simp [condition_assoc n (t := t) f]
+        simp only [Nat.succ_eq_add_one, ofSequence_obj, unstep, ι, mk, const_obj_obj, NatTrans.ofSequence_app, Category.assoc]
+        simp only [condition_assoc n (t := t) f, Function.comp_apply, Nat.succ_eq_add_one]
       )
 
 end SeqColimCocone
@@ -335,8 +336,8 @@ theorem seqColim.hom_ext
 noncomputable def seqColimIsSeqColim : IsColimit (SeqColimCocone.mk (seqColim.ι s) seqColim.condition)
   := IsColimit.mk
     (fun t => seqColim.desc (SeqColimCocone.ι t) SeqColimCocone.condition)
-    (by simp [SeqColimCocone.mk])
-    (by simp [SeqColimCocone.mk] ; aesop_cat)
+    (by simp only [ofSequence_obj, SeqColimCocone.mk, const_obj_obj, NatTrans.ofSequence_app, colimit.ι_desc, implies_true])
+    (by simp only [SeqColimCocone.mk, ofSequence_obj, const_obj_obj, NatTrans.ofSequence_app] ; aesop_cat)
 
 instance hasSeqColimit_step : HasSeqColimit (s.step)
   := ⟨_ , SeqColimCocone.stepIsColimit seqColimIsSeqColim⟩
@@ -351,18 +352,18 @@ noncomputable abbrev seqColim.map
   : seqColim s₁ ⟶ seqColim s₂
   := seqColim.desc
     (fun n => t.obj n ≫ seqColim.ι s₂ n)
-    (by intro ; simp ; rw [condition])
+    (by intro ; simp only [Nat.succ_eq_add_one, Seq.Hom.map_assoc] ; rw [condition])
 
 -- 3.5.2
 @[simp]
 lemma seqColim.map_id
   : seqColim.map (𝟙 s) = 𝟙 (seqColim s)
-  := by ext ; simp [SeqColimCocone.mk]
+  := by ext ; simp only [colimit.ι_desc, Seq.category_id_obj, SeqColimCocone.mk, Category.id_comp, NatTrans.ofSequence_app, Category.comp_id]
 
 -- 3.5.3
 @[reassoc]
 lemma seqColim.map_comp : seqColim.map t₁ ≫ seqColim.map t₂ = seqColim.map (t₁ ≫ t₂)
-  := by ext ; simp [SeqColimCocone.mk]
+  := by ext ; simp only [colimit.ι_desc_assoc, ofSequence_obj, SeqColimCocone.mk, NatTrans.ofSequence_app, Category.assoc, colimit.ι_desc, Seq.category_comp_obj]
 
 -- 3.5.4
 lemma seqColim.map_ext
@@ -370,7 +371,7 @@ lemma seqColim.map_ext
   (h : ∀{n}, t₁.obj n = t₂.obj n)
   : seqColim.map t₁ = seqColim.map t₂
   := by
-    simp [seqColim.map,desc]
+    simp only [map, desc]
     congr
     ext
     rw [h]

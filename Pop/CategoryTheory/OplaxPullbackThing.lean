@@ -153,8 +153,8 @@ where
     right  := r.inv
     wl := by
       rw [← L.mapIso_inv l , Iso.eq_inv_comp , ← Category.assoc , ← hl]
-      simp
+      simp only [Functor.mapIso_inv, Category.assoc, Iso.map_hom_inv_id, Category.comp_id]
     wr := by
       rw [← R.mapIso_inv r , Iso.eq_inv_comp , ← Category.assoc , ← hr]
-      simp
+      simp only [Functor.mapIso_inv, Category.assoc, Iso.map_hom_inv_id, Category.comp_id]
     }

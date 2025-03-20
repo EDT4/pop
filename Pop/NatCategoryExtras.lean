@@ -35,7 +35,7 @@ namespace Nat.StrictMono
     let _ : Decidable (∀ y, (y < x) → (f y < n))   := by rw [← e] ; apply_assumption
     let _ : Decidable (∀ y, ¬(x ≤ y) → ¬(f y ≥ n)) := by rw [all_dist (fun _ => imp_dist not_le not_le)] ; apply_assumption
     let _ : Decidable (∀ y, (f y ≥ n) → (x ≤ y))   := by rw [all_dist (fun _ => contrapos)] ; apply_assumption
-    simp [Membership.mem,Set.Mem,Nat.lt_wfRel]
+    simp only [Membership.mem, Set.Mem, ge_iff_le, lt_wfRel, not_lt]
     apply instDecidableAnd
 
   def inv (n : ℕ) : ℕ :=
@@ -45,14 +45,14 @@ namespace Nat.StrictMono
   lemma inv_order_inverse_r {y : ℕ} : f (inv f smono y) ≥ y := by
     have p := Encodable.choose_spec (Nat.lt_wfRel.wf.has_min (condition f y) (condition_existence f smono))
     revert p
-    simp [Nat.lt_wfRel]
+    simp only [lt_wfRel, not_lt, ge_iff_le, and_imp]
     intros
     assumption
 
   lemma inv_adj_l {y : ℕ} : ∀{x}, (f x ≥ y) → (x ≥ inv f smono y) := by
     have p := Encodable.choose_spec (Nat.lt_wfRel.wf.has_min (condition f y) (condition_existence f smono))
     revert p
-    simp [Nat.lt_wfRel]
+    simp only [lt_wfRel, not_lt, ge_iff_le, and_imp]
     intro _ _
     assumption
 
@@ -107,24 +107,25 @@ namespace Nat.Functor
   variable (o : 0 < k := by decide)
 
   def pred_succ_adjunction : pred ⊣ succ where
-    counit := .mk fun n => homOfLE $ by simp [pred,succ]
+    counit := .mk fun n => homOfLE $ by
+      simp only [succ, succ_eq_succ, pred, pred_eq_pred, Functor.comp_obj, Monotone.functor_obj, succ_eq_add_one, pred_eq_sub_one, add_tsub_cancel_right, Functor.id_obj, le_refl]
     unit   := .mk fun n => homOfLE $ by induction n <;> simp [pred,succ]
 
   def subl_addl_adjunction : subl k ⊣ addl k where
-    counit := .mk fun n => homOfLE $ by simp [subl,addl]
+    counit := .mk fun n => homOfLE $ by simp only [addl, subl, Functor.comp_obj, Monotone.functor_obj, add_tsub_cancel_left, Functor.id_obj, le_refl]
     unit   := .mk fun n => homOfLE $ le_add_tsub
 
   def subl_addr_adjunction : subl k ⊣ addr k where
-    counit := .mk fun n => homOfLE $ by simp [subl,addr]
-    unit   := .mk fun n => homOfLE $ by simp [subl,addr] ; rewrite [Nat.add_comm] ; exact le_add_tsub
+    counit := .mk fun n => homOfLE $ by simp only [addr, subl, Functor.comp_obj, Monotone.functor_obj, add_tsub_cancel_right, Functor.id_obj, le_refl]
+    unit   := .mk fun n => homOfLE $ by simp only [Functor.id_obj, subl, addr, Functor.comp_obj, Monotone.functor_obj] ; rewrite [Nat.add_comm] ; exact le_add_tsub
 
-  def mull_divr_adjunction : mull k ⊣ divfr k := GaloisConnection.adjunction $ by intro _ _ ; simp [GaloisConnection] ; rewrite [Nat.mul_comm] ; exact (Nat.le_div_iff_mul_le o).symm
+  def mull_divr_adjunction : mull k ⊣ divfr k := GaloisConnection.adjunction $ by intro _ _ ; simp only ; rewrite [Nat.mul_comm] ; exact (Nat.le_div_iff_mul_le o).symm
   def mulr_divr_adjunction : mulr k ⊣ divfr k := GaloisConnection.adjunction $ fun _ _ => (Nat.le_div_iff_mul_le o).symm
 
   instance succ_final : Functor.Final succ     := Functor.final_of_adjunction pred_succ_adjunction
   instance addl_final : Functor.Final (addl k) := Functor.final_of_adjunction subl_addl_adjunction
   instance addr_final : Functor.Final (addr k) := Functor.final_of_adjunction subl_addr_adjunction
   instance mull_final : Functor.Final (mull k) := Functor.final_of_adjunction $ GaloisConnection.adjunction $ gc_mul_ceilDiv o
-  instance mulr_final : Functor.Final (mulr k) := Functor.final_of_adjunction $ GaloisConnection.adjunction $ by intro _ _ ; simp [GaloisConnection] ; rewrite [Nat.mul_comm] ; apply gc_smul_ceilDiv o
+  instance mulr_final : Functor.Final (mulr k) := Functor.final_of_adjunction $ GaloisConnection.adjunction $ by intro _ _ ; simp only ; rewrite [Nat.mul_comm] ; apply gc_smul_ceilDiv o
   instance divr_final : Functor.Final (divfr k) := Functor.final_of_adjunction (mull_divr_adjunction o)
 end Nat.Functor
