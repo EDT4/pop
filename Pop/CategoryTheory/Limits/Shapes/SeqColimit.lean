@@ -2,6 +2,7 @@ import Mathlib.CategoryTheory.Comma.Over.Basic
 import Mathlib.CategoryTheory.FiberedCategory.Fiber
 import Mathlib.CategoryTheory.Functor.OfSequence
 import Mathlib.CategoryTheory.Monad.Limits
+import Mathlib.CategoryTheory.Whiskering
 import Mathlib.Data.Nat.EvenOddRec
 import Pop.NatExtras
 
@@ -200,6 +201,35 @@ namespace Seq
         := Nat.rec2r_odd_property P p1 ps
     end Iterate2
   end
+
+  namespace Iterate2
+    variable {F G : (m : C ⥤ C) × (𝟭 C ⟶ m)}
+
+    lemma map_iso
+      [isof : IsIso F.2]
+      [isog : IsIso G.2]
+      {n : ℕ}
+      : IsIso ((iterate2 (c := Cat.of C) F G).map n)
+      := by induction n generalizing F G isof isog with
+      | zero     => apply IsIso.comp_isIso
+      | succ n r =>
+        let _ : IsIso (map G F n) := r
+        apply isIso_whiskerLeft
+
+    lemma diagram_map_iso
+      {s : Seq C} [i : ∀{n}, IsIso (s.map n)]
+      {a b} {o : a ⟶ b}
+      : IsIso (s.diagram.map o)
+      := match a , b , leOfHom o with
+      | 0   , 0   , _ => IsIso.id _
+      | 0   , 1   , _ => i
+      | 0   , b+2 , _ => by
+        let i' := diagram_map_iso (s := s.step) (a := 0) (b := b+1) (o := homOfLE (by omega))
+        simp only [ofSequence] at i'
+        apply IsIso.comp_isIso
+      | a+1 , b+1 , _ => diagram_map_iso (s := s.step) (a := a) (b := b) (o := homOfLE (by omega))
+
+  end Iterate2
 end Seq
 
 abbrev HasSeqColimit(s : Seq C) := HasColimit s.diagram

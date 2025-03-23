@@ -29,7 +29,7 @@ namespace Nat.StrictMono
     -- TODO: There must be a better way. Did not find the right tactics for this
     let imp_dist {p₁ q₁ p₂ q₂ : Prop} : (p₁ ↔ p₂) → (q₁ ↔ q₂) → ((p₁ → q₁) ↔ (p₂ → q₂)) := by aesop
     let all_dist {A : Type _}{p q : A → Prop} : (∀ x, p x ↔ q x) → ((∀ x, p x) ↔ (∀ x, q x)) := by aesop
-    let contrapos {p q : Prop} : (p → q) ↔ (¬q → ¬p) := by aesop
+    let contrapos {p q : Prop} : (p → q) ↔ (¬q → ¬p) := by aesop -- TODO: This is classical in general, which is not necessary here.
     let e n (P : ℕ → Prop) : (∀(k : Fin n), P k) ↔ (∀ k, (k < n) → P k) := Iff.intro (fun a b c => a (.mk b c)) (fun a b => a b.val b.isLt)
     let _ : Decidable (∀(y : Fin x), f y < n)      := Fintype.decidableForallFintype
     let _ : Decidable (∀ y, (y < x) → (f y < n))   := by rw [← e] ; apply_assumption

@@ -55,6 +55,7 @@ end CategoryTheory.Adjunction.CoreEtaInvertibleHom
 --   noncomputable def mk
 --     (L : C ⥤ FullSubcategory A)
 --     (η : 𝟭 C ⟶ L ⋙ fullSubcategoryInclusion A)
+--     -- [i : ∀(c : C), IsIso (η.app c)]
 --     [i : ∀(a : FullSubcategory A), IsIso (η.app a.obj)]
 --     : L ⊣ fullSubcategoryInclusion A
 --     where
@@ -74,8 +75,9 @@ end CategoryTheory.Adjunction.CoreEtaInvertibleHom
 --       left_triangle_components := by
 --         intro c
 --         simp
---         apply (Eq.trans · (CategoryTheory.IsIso.hom_inv_id (η.app (L.obj c).obj)))
---         apply congr_arg (· ≫ inv (η.app (L.obj c).obj))
---         let nn := η.naturality (X := c) (Y := (L.obj c).obj) (η.app c)
---         sorry -- TODO: ?
+--         apply (comp_inv_eq_id (η.app (L.obj c).obj)).mpr
+--         -- apply_fun (η.app c ≫ ·)
+--         -- . exact (η.naturality (η.app c)).symm
+--         -- . sorry
+--         sorry
 -- end CategoryTheory.Adjunction.FullCategory

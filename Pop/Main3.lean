@@ -86,21 +86,17 @@ namespace IntersectionReflective
     (fun c => .intro (Minf_in_left closed_a c) (Minf_in_right closed_b c))
 
   def ta' : (sequence A B).obj 1 ⟶ (sequence A B).obj 0 := by
-    simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r,fullSubcategoryMonad]
-    constructor
-    . sorry
-    . intro ; simp ; sorry
+    simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r,fullSubcategoryMonad] -- fullSubcategoryInclusion,inducedFunctor,FullSubcategory.obj,reflector
+    let te := (reflectorAdjunction (fullSubcategoryInclusion A)).counit
+    sorry
+    -- constructor
+    -- . sorry
+    -- . intro ; simp ; sorry
 
   def ta {n} : (sequence A B).obj n ⟶ (sequence A B).obj n.succ
     := (sequence A B).map n
 
-  -- def test2 {n} : (sequence A B).obj (n + 2) ⟶ (sequence A B).obj n := by
-  --   simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r]
-  --   rewrite [← Category.assoc]
-  --   rewrite [← Category.id_comp]
-  --   exact whiskerRight sorry ((sequence A B).obj n)
-
-  def test {n} : (sequence A B).obj (n + 1) ⟶ (sequence A B).obj n := by
+  def test {n} : (sequence A B).obj n.succ ⟶ (sequence A B).obj n := by
     simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r]
     sorry
 
@@ -109,8 +105,21 @@ namespace IntersectionReflective
       (sequence A B).diagram
       (.mk (𝟭 C) (NatTrans.ofSequence
         (Nat.rec (𝟙 (𝟭 C)) (fun _ => (test ≫·)))
-        (by simp ; sorry)
+        (by
+          intro n
+          simp
+          sorry
+        )
       ))
+
+  noncomputable abbrev l' {c}
+    (i : (sequence A B).diagram.FullyFaithful)
+    : (M∞ A B).obj c ⟶ c
+    :=
+        -- TODO: Organise
+      let a := ((colimitIsoFlipCompColim (sequence A B).diagram).app c).hom
+      let b := colimit.desc ((sequence A B).diagram.flip.obj c) (.mk c (NatTrans.ofSequence (by simp ; sorry) sorry))
+      sorry
 
   -- noncomputable abbrev l {c} : (M∞ A B).obj c ⟶ c :=
   --     -- TODO: Organise
