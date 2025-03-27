@@ -85,22 +85,17 @@ namespace IntersectionReflective
     (M∞ A B)
     (fun c => .intro (Minf_in_left closed_a c) (Minf_in_right closed_b c))
 
-  def ta' : (sequence A B).obj 1 ⟶ (sequence A B).obj 0 := by
-    simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r,fullSubcategoryMonad] -- fullSubcategoryInclusion,inducedFunctor,FullSubcategory.obj,reflector
-    let te := (reflectorAdjunction (fullSubcategoryInclusion A)).counit
-    sorry
-    -- constructor
-    -- . sorry
-    -- . intro ; simp ; sorry
-
-  def ta {n} : (sequence A B).obj n ⟶ (sequence A B).obj n.succ
-    := (sequence A B).map n
-
-  def test {n} : (sequence A B).obj n.succ ⟶ (sequence A B).obj n := by
-    simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r]
-    sorry
-
   noncomputable abbrev l : M∞ A B ⟶ 𝟭 C :=
+    let ta' : (sequence A B).obj 1 ⟶ (sequence A B).obj 0 := by -- TODO: ?
+      simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r,fullSubcategoryMonad] -- fullSubcategoryInclusion,inducedFunctor,FullSubcategory.obj,reflector
+      let te := (reflectorAdjunction (fullSubcategoryInclusion A)).counit
+      sorry
+
+    -- TODO: Inverse to (sequence A B).map n ?
+    let test {n} : (sequence A B).obj n.succ ⟶ (sequence A B).obj n := by
+      simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r]
+      sorry
+
     colimit.desc
       (sequence A B).diagram
       (.mk (𝟭 C) (NatTrans.ofSequence
@@ -112,38 +107,13 @@ namespace IntersectionReflective
         )
       ))
 
-  noncomputable abbrev l' {c}
-    (i : (sequence A B).diagram.FullyFaithful)
-    : (M∞ A B).obj c ⟶ c
-    :=
-        -- TODO: Organise
-      let a := ((colimitIsoFlipCompColim (sequence A B).diagram).app c).hom
-      let b := colimit.desc ((sequence A B).diagram.flip.obj c) (.mk c (NatTrans.ofSequence (by simp ; sorry) sorry))
-      sorry
+  noncomputable abbrev l' {c} : (M∞ A B).obj c ⟶ c :=
+    let F := (sequence A B).diagram.flip.obj c
+    let convF : (M∞ A B).obj c ⟶ colimit F := ((colimitIsoFlipCompColim (sequence A B).diagram).app c).hom
+    let h : (n : ℕ) → F.obj n ⟶ c := Nat.rec (𝟙 c) fun n r => sorry ≫ r
+    let Eh : colimit F ⟶ c := colimit.desc F (.mk c $ NatTrans.ofSequence h sorry)
+    convF ≫ Eh
 
-  -- noncomputable abbrev l {c} : (M∞ A B).obj c ⟶ c :=
-  --     -- TODO: Organise
-  --   let a := ((colimitIsoFlipCompColim (sequence A B).diagram).app c).hom
-  --   let b := colimit.desc ((sequence A B).diagram.flip.obj c) (.mk c (NatTrans.ofSequence
-  --     (by -- TODO: generalise and separate
-  --       simp
-  --       intro n
-  --       induction n generalizing A B c with
-  --       | zero => exact 𝟙 c
-  --       | succ n r =>
-  --         apply (·≫·)
-  --         . apply r (A := A) (B:= B)
-  --         . sorry
-  --       -- induction n
-  --       -- . exact 𝟙 c
-  --       -- . apply (·≫·)
-  --       --   . assumption
-  --       --   . simp [sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r]
-  --       --     sorry
-  --     )
-  --     (by simp ; sorry)
-  --   ))
-  --   a ≫ b
 end IntersectionReflective
 
 noncomputable def intersectionReflective : Reflective (fullSubcategoryInclusion (A ∩ B : Set C)) :=
@@ -152,7 +122,7 @@ noncomputable def intersectionReflective : Reflective (fullSubcategoryInclusion 
     L := L
     adj := Adjunction.CoreEtaInvertibleHom.mk
       (seqColim.ι (IntersectionReflective.sequence A B) 0)
-      (fun f => L.map f ≫ IntersectionReflective.l.app _) -- TODO: Either construct this directly or just prove that Adjunction.CoreHom.hom is bijective from the full faithful functors
+      (fun f => L.map f ≫ IntersectionReflective.l') -- TODO: or IntersectionReflective.l.app _
       (fun f => sorry)
       (fun f => sorry)
   }
