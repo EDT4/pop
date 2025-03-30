@@ -9,6 +9,7 @@ import Mathlib.Logic.Function.Defs
 import Mathlib.Order.Monotone.Basic
 import Mathlib.Order.Monotone.Defs
 import Pop.CategoryTheory.Adjunction.MkExtras
+-- import Pop.CategoryTheory.Limits.OplaxPullbackThing
 import Pop.CategoryTheory.Limits.Shapes.SeqColimit
 import Pop.CategoryTheory.OplaxPullbackThing
 import Pop.NatCategoryExtras
@@ -130,13 +131,67 @@ noncomputable def intersectionReflective : Reflective (fullSubcategoryInclusion 
 namespace FutureTodos
   variable {A : Type _} [Category A]
   variable {B : Type _} [Category B]
-  variable {C : Type _} [Category C]
-  variable {L : A ⥤ C}
-  variable {R : B ⥤ C}
+  variable {S : Type _} [Category S]
+  variable (L : A ⥤ C)
+  variable (R : B ⥤ C)
 
   def Pl  : Set (OplaxPullbackThing L R) := fun p => IsIso p.homl
   def Pr  : Set (OplaxPullbackThing L R) := fun p => IsIso p.homr
-  def Plr : Set (OplaxPullbackThing L R) := Pl ∩ Pr
+  def Plr : Set (OplaxPullbackThing L R) := (Pl L R) ∩ (Pr L R)
+
+  def comma_pl : Comma L R ⥤ FullSubcategory (Pl L R)
+    := FullSubcategory.lift (Pl L R) (OplaxPullbackThing.byComma L R) (by simp [OplaxPullbackThing.byComma,Pl] ; infer_instance)
+
+  def comma_pr : Comma R L ⥤ FullSubcategory (Pr L R)
+    := FullSubcategory.lift (Pr L R) (OplaxPullbackThing.byFlippedComma L R) (by simp [OplaxPullbackThing.byFlippedComma,Pr] ; infer_instance)
+
+  noncomputable def pl_comma : FullSubcategory (Pl L R) ⥤ Comma L R where
+    obj p := {
+      left := p.obj.left
+      right := p.obj.right
+      hom := inv _ (I := p.property) ≫ p.obj.homr
+    }
+    map f := {
+      left := f.left
+      right := f.right
+    }
+
+  noncomputable def pr_comma : FullSubcategory (Pr L R) ⥤ Comma R L where
+    obj p := {
+      left := p.obj.right
+      right := p.obj.left
+      hom := inv _ (I := p.property) ≫ p.obj.homl
+    }
+    map f := {
+      left := f.right
+      right := f.left
+    }
+
+  -- TODO: Maybe there is an easier way
+  instance Pl_closed_iso : IsClosedUnderIsomorphisms (Pl L R) := sorry
+    -- where
+    -- of_iso i p := by
+    --   obtain ⟨f,⟨i1,i2⟩⟩ := p.out
+    --   simp [Pl]
+    --   simp [Pl] at p
+    --   let wll := i.inv.wl
+    --   iterate 3 constructor
+    --   . sorry
+    --   . sorry
+    --   . exact L.map (OplaxPullbackThing.leftIso i).inv ≫ f ≫ (OplaxPullbackThing.middleIso i).hom
+    --   -- exact {out := ⟨ , ⟨sorry , sorry⟩⟩}
+  instance Pr_closed_iso : IsClosedUnderIsomorphisms (Pr L R) := sorry
+
+  instance Pl_refl : Reflective (fullSubcategoryInclusion (Pl L R)) := sorry
+  instance Pr_refl : Reflective (fullSubcategoryInclusion (Pr L R)) := sorry
+
+  instance [HasColimitsOfShape S C] : HasColimitsOfShape S (OplaxPullbackThing L R) := sorry
+
+  def Pl_closed_seqColim : ClosedUnderColimitsOfShape ℕ (Pl L R) := sorry
+  def Pr_closed_seqColim : ClosedUnderColimitsOfShape ℕ (Pr L R) := sorry
+
+  noncomputable def Plr_refl : Reflective (fullSubcategoryInclusion (Plr L R))
+    := intersectionReflective (Pl L R) (Pr L R) (Pl_closed_seqColim L R) (Pr_closed_seqColim L R)
 end FutureTodos
 
 end

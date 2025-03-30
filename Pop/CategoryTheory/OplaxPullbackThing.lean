@@ -1,6 +1,7 @@
 import Init.Core
 import Init.Prelude
 import Mathlib.CategoryTheory.Category.Basic
+import Mathlib.CategoryTheory.Comma.Basic
 import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.CategoryTheory.Iso
 import Mathlib.CategoryTheory.NatTrans
@@ -75,6 +76,34 @@ section
 
   def rrm : NatTrans (middleFunctor L R) (rightFunctor L R ⋙ R) where
     app := homr
+
+  def byComma : Comma L R ⥤ OplaxPullbackThing L R where
+    obj p := {
+      left   := p.left
+      middle := L.obj p.left
+      right  := p.right
+      homl   := 𝟙 _
+      homr   := p.hom
+    }
+    map f := {
+      left := f.left
+      middle := L.map f.left
+      right := f.right
+    }
+
+  def byFlippedComma : Comma R L ⥤ OplaxPullbackThing L R where
+    obj p := {
+      left   := p.right
+      middle := R.obj p.left
+      right  := p.left
+      homl   := p.hom
+      homr   := 𝟙 _
+    }
+    map f := {
+      left := f.right
+      middle := R.map f.left
+      right := f.left
+    }
 end
 
 section
@@ -90,6 +119,7 @@ variable {x y z: OplaxPullbackThing L R}
 variable (h : x ⟶ y)
 variable (i : x ≅ y)
 
+-- The purpose of this is some search tactic, but why is this necessary when ext is on the structure already?
 @[ext]
 lemma hom_ext
   (f g : x ⟶ y)
@@ -102,8 +132,8 @@ lemma hom_ext
 -- The fields preserve isomorphisms.
 section
   @[simps!] def leftIso   : x.left   ≅ y.left   := (leftFunctor   L R).mapIso i
-  @[simps!] def middleIso : x.right  ≅ y.right  := (rightFunctor  L R).mapIso i
-  @[simps!] def rightIso  : x.middle ≅ y.middle := (middleFunctor L R).mapIso i
+  @[simps!] def middleIso : x.middle ≅ y.middle := (middleFunctor L R).mapIso i
+  @[simps!] def rightIso  : x.right  ≅ y.right  := (rightFunctor  L R).mapIso i
 end
 
 section

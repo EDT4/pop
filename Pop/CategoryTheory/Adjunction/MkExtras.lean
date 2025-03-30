@@ -47,37 +47,43 @@ namespace CategoryTheory.Adjunction.CoreEtaInvertibleHom
     mk η e.invFun e.left_inv e.right_inv
 end CategoryTheory.Adjunction.CoreEtaInvertibleHom
 
--- namespace CategoryTheory.Adjunction.FullCategory
---   variable {C : Type _}
---   variable [Category C]
---   variable {A : Set C}
---
---   noncomputable def mk
---     (L : C ⥤ FullSubcategory A)
---     (η : 𝟭 C ⟶ L ⋙ fullSubcategoryInclusion A)
---     -- [i : ∀(c : C), IsIso (η.app c)]
---     [i : ∀(a : FullSubcategory A), IsIso (η.app a.obj)]
---     : L ⊣ fullSubcategoryInclusion A
---     where
---       unit := η
---       counit := .mk
---         (fun a => have y := inv (η.app a.obj) ; y)
---         (by
---           intro X Y f
---           simp_all only [Functor.comp_obj, fullSubcategoryInclusion.obj, Functor.id_obj, Functor.comp_map, fullSubcategoryInclusion.map, Functor.id_map]
---           apply (IsIso.comp_inv_eq (η.app Y.obj)).mpr
---           apply (Eq.trans · (Category.assoc _ _ _).symm)
---           apply (IsIso.eq_inv_comp (η.app X.obj)).mpr
---           apply (Eq.trans · (η.naturality (X := X.obj) (Y := Y.obj) f).symm)
---           apply congr_arg (η.app X.obj ≫ ·)
---           simp only [Functor.comp_map, fullSubcategoryInclusion.map]
---         )
---       left_triangle_components := by
---         intro c
---         simp
---         apply (comp_inv_eq_id (η.app (L.obj c).obj)).mpr
---         -- apply_fun (η.app c ≫ ·)
---         -- . exact (η.naturality (η.app c)).symm
---         -- . sorry
---         sorry
--- end CategoryTheory.Adjunction.FullCategory
+namespace CategoryTheory.Adjunction.FullyFaithfulIso
+  variable {C : Type _}
+  variable [Category C]
+  variable {D : Type _}
+  variable [Category D]
+
+  noncomputable def mk
+    (T : C ⥤ D)
+    (u : D ⥤ C)
+    [fu : u.Full]
+    [ff : u.Faithful]
+    (η : 𝟭 C ⟶ T ⋙ u)
+    [i : ∀(d : D), IsIso (η.app (u.obj d))]
+    : T ⊣ u :=
+    let ε := .mk
+      (fun d => Functor.preimage u (inv _ (I := i d)))
+      (by
+        intro X Y f
+        simp_all
+        apply_fun u.map
+        . simp only [Functor.map_comp, Functor.map_preimage, IsIso.eq_inv_comp, ← Category.assoc, IsIso.comp_inv_eq]
+          apply (Eq.trans · (η.naturality (u.map f)).symm)
+          apply congr_arg (η.app (u.obj X) ≫ ·)
+          simp only [Functor.comp_obj, Functor.comp_map]
+        . exact ff.map_injective
+      )
+    {
+      unit := η
+      counit := ε
+      left_triangle_components := by
+        intro c
+        simp only [Functor.id_obj, Functor.comp_obj]
+        apply_fun u.map
+        . simp only [Functor.map_comp, Functor.map_preimage, Functor.map_id, IsIso.comp_inv_eq, Category.id_comp, ε]
+          apply_fun (η.app c ≫ ·)
+          . exact (η.naturality (η.app c)).symm
+          . sorry -- TODO: probably not?
+        . exact ff.map_injective
+      right_triangle_components := by simp only [Functor.id_obj, Functor.map_preimage, IsIso.hom_inv_id, implies_true, ε]
+    }
