@@ -9,7 +9,7 @@ import Mathlib.Logic.Function.Defs
 import Mathlib.Order.Monotone.Basic
 import Mathlib.Order.Monotone.Defs
 import Pop.CategoryTheory.Adjunction.MkExtras
--- import Pop.CategoryTheory.Limits.OplaxPullbackThing
+import Pop.CategoryTheory.Limits.OplaxPullbackThing
 import Pop.CategoryTheory.Limits.Shapes.SeqColimit
 import Pop.CategoryTheory.OplaxPullbackThing
 import Pop.NatCategoryExtras
@@ -128,24 +128,31 @@ noncomputable def intersectionReflective : Reflective (fullSubcategoryInclusion 
       (fun f => sorry)
   }
 
-namespace FutureTodos
-  variable {A : Type _} [Category A]
-  variable {B : Type _} [Category B]
-  variable {S : Type _} [Category S]
-  variable (L : A ⥤ C)
-  variable (R : B ⥤ C)
+namespace Lemma2
+  variable {A : Type _} [Category A] [hsa : HasSeqColimits A]
+  variable {B : Type _} [Category B] [hsb : HasSeqColimits B]
+  variable (F : A ⥤ C)
+  variable (G : B ⥤ C)
+  variable (Fb : C ⥤ A)
+  variable (Gb : C ⥤ B)
+  variable (Fb : Fb ⊣ F)
+  variable (Gb : Gb ⊣ G)
+  variable (pua : HasPushouts A)
+  variable (pub : HasPushouts B)
+  variable (pnf : PreservesColimitsOfShape ℕ F)
+  variable (png : PreservesColimitsOfShape ℕ G)
 
-  def Pl  : Set (OplaxPullbackThing L R) := fun p => IsIso p.homl
-  def Pr  : Set (OplaxPullbackThing L R) := fun p => IsIso p.homr
-  def Plr : Set (OplaxPullbackThing L R) := (Pl L R) ∩ (Pr L R)
+  def Pl  : Set (OplaxPullbackThing F G) := fun p => IsIso p.homl
+  def Pr  : Set (OplaxPullbackThing F G) := fun p => IsIso p.homr
+  def Plr : Set (OplaxPullbackThing F G) := (Pl F G) ∩ (Pr F G)
 
-  def comma_pl : Comma L R ⥤ FullSubcategory (Pl L R)
-    := FullSubcategory.lift (Pl L R) (OplaxPullbackThing.byComma L R) (by simp [OplaxPullbackThing.byComma,Pl] ; infer_instance)
+  def comma_pl : Comma F G ⥤ FullSubcategory (Pl F G)
+    := FullSubcategory.lift (Pl F G) (OplaxPullbackThing.byComma F G) (by simp [OplaxPullbackThing.byComma,Pl] ; infer_instance)
 
-  def comma_pr : Comma R L ⥤ FullSubcategory (Pr L R)
-    := FullSubcategory.lift (Pr L R) (OplaxPullbackThing.byFlippedComma L R) (by simp [OplaxPullbackThing.byFlippedComma,Pr] ; infer_instance)
+  def comma_pr : Comma G F ⥤ FullSubcategory (Pr F G)
+    := FullSubcategory.lift (Pr F G) (OplaxPullbackThing.byFlippedComma F G) (by simp [OplaxPullbackThing.byFlippedComma,Pr] ; infer_instance)
 
-  noncomputable def pl_comma : FullSubcategory (Pl L R) ⥤ Comma L R where
+  noncomputable def pl_comma : FullSubcategory (Pl F G) ⥤ Comma F G where
     obj p := {
       left := p.obj.left
       right := p.obj.right
@@ -156,7 +163,7 @@ namespace FutureTodos
       right := f.right
     }
 
-  noncomputable def pr_comma : FullSubcategory (Pr L R) ⥤ Comma R L where
+  noncomputable def pr_comma : FullSubcategory (Pr F G) ⥤ Comma G F where
     obj p := {
       left := p.obj.right
       right := p.obj.left
@@ -168,7 +175,7 @@ namespace FutureTodos
     }
 
   -- TODO: Maybe there is an easier way
-  instance Pl_closed_iso : IsClosedUnderIsomorphisms (Pl L R) := sorry
+  instance Pl_closed_iso : IsClosedUnderIsomorphisms (Pl F G) := sorry
     -- where
     -- of_iso i p := by
     --   obtain ⟨f,⟨i1,i2⟩⟩ := p.out
@@ -178,20 +185,48 @@ namespace FutureTodos
     --   iterate 3 constructor
     --   . sorry
     --   . sorry
-    --   . exact L.map (OplaxPullbackThing.leftIso i).inv ≫ f ≫ (OplaxPullbackThing.middleIso i).hom
+    --   . exact F.map (OplaxPullbackThing.leftIso i).inv ≫ f ≫ (OplaxPullbackThing.middleIso i).hom
     --   -- exact {out := ⟨ , ⟨sorry , sorry⟩⟩}
-  instance Pr_closed_iso : IsClosedUnderIsomorphisms (Pr L R) := sorry
+  instance Pr_closed_iso : IsClosedUnderIsomorphisms (Pr F G) := sorry
 
-  instance Pl_refl : Reflective (fullSubcategoryInclusion (Pl L R)) := sorry
-  instance Pr_refl : Reflective (fullSubcategoryInclusion (Pr L R)) := sorry
+  instance Pl_refl : Reflective (fullSubcategoryInclusion (Pl F G)) := sorry
+  instance Pr_refl : Reflective (fullSubcategoryInclusion (Pr F G)) := sorry
 
-  instance [HasColimitsOfShape S C] : HasColimitsOfShape S (OplaxPullbackThing L R) := sorry
+  local instance [hc : HasSeqColimits C] : HasSeqColimits (OplaxPullbackThing F G)
+    := sorry
+    -- := OplaxPullbackThing.hasColimitsOfShape
 
-  def Pl_closed_seqColim : ClosedUnderColimitsOfShape ℕ (Pl L R) := sorry
-  def Pr_closed_seqColim : ClosedUnderColimitsOfShape ℕ (Pr L R) := sorry
+  def Pl_closed_seqColim : ClosedUnderColimitsOfShape ℕ (Pl F G) := sorry
+  def Pr_closed_seqColim : ClosedUnderColimitsOfShape ℕ (Pr F G) := sorry
 
-  noncomputable def Plr_refl : Reflective (fullSubcategoryInclusion (Plr L R))
-    := intersectionReflective (Pl L R) (Pr L R) (Pl_closed_seqColim L R) (Pr_closed_seqColim L R)
-end FutureTodos
+  noncomputable def Plr_refl : Reflective (fullSubcategoryInclusion (Plr F G))
+    := intersectionReflective (Pl F G) (Pr F G) (Pl_closed_seqColim F G) (Pr_closed_seqColim F G)
+
+  def proj_a : FullSubcategory (Plr F G) ⥤ A := sorry
+  def proj_b : FullSubcategory (Plr F G) ⥤ B := sorry
+
+  -- TODO: By compositions of adjunctions
+  def unproj_a : A ⥤ FullSubcategory (Plr F G) := sorry
+  def unproj_b : B ⥤ FullSubcategory (Plr F G) := sorry
+
+  def proj_adj_left : unproj_a F G ⊣ proj_a F G := sorry
+  def proj_adj_right : unproj_b F G ⊣ proj_b F G := sorry
+
+end Lemma2
+
+namespace FutureTODOs
+  variable {A : Type _} [Category A] [hsa : HasSeqColimits A]
+  variable {B : Type _} [Category B] [hsb : HasSeqColimits B]
+  variable (F : C ⥤ A)
+  variable (G : C ⥤ B)
+
+  -- Presheaf C := Cᵒᵖ ⥤ ?
+
+  -- def Fs : Presheaf A ⥤ Presheaf C
+  -- def Gs : Presheaf A ⥤ Presheaf C
+  -- TODO: and then use these with proj_adj_left andproj_adj_right?
+  -- TODO: Pullback Fs Gs, then (Presheaf (Pullback Fs Gs) ⥤ A) and (Presheaf (Pullback Fs Gs) ⥤ B)
+
+end FutureTODOs
 
 end

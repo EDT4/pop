@@ -15,8 +15,8 @@ variable {C : Type _} [Category C]
 
 structure OplaxPullbackThing (L : A ⥤ C) (R : B ⥤ C) where
   left   : A
-  right  : B
   middle : C
+  right  : B
   homl : middle ⟶ L.obj left
   homr : middle ⟶ R.obj right
 
