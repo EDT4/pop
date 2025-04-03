@@ -108,6 +108,7 @@ namespace IntersectionReflective
         )
       ))
 
+  -- TODO: c must be in A u B
   noncomputable abbrev l' {c} : (M∞ A B).obj c ⟶ c :=
     let F := (sequence A B).diagram.flip.obj c
     let convF : (M∞ A B).obj c ⟶ colimit F := ((colimitIsoFlipCompColim (sequence A B).diagram).app c).hom
@@ -193,10 +194,10 @@ namespace Lemma2
   instance Pr_refl : Reflective (fullSubcategoryInclusion (Pr F G)) := sorry
 
   local instance [hc : HasSeqColimits C] : HasSeqColimits (OplaxPullbackThing F G)
-    := sorry
-    -- := OplaxPullbackThing.hasColimitsOfShape
+    := OplaxPullbackThing.hasColimitsOfShape
 
-  def Pl_closed_seqColim : ClosedUnderColimitsOfShape ℕ (Pl F G) := sorry
+  -- TODO: ?
+  def Pl_closed_seqColim : ClosedUnderColimitsOfShape J (Pl F G) → ClosedUnderColimitsOfShape J (Pl F G) := sorry
   def Pr_closed_seqColim : ClosedUnderColimitsOfShape ℕ (Pr F G) := sorry
 
   noncomputable def Plr_refl : Reflective (fullSubcategoryInclusion (Plr F G))
@@ -214,19 +215,23 @@ namespace Lemma2
 
 end Lemma2
 
-namespace FutureTODOs
+namespace Part3
+  universe u
   variable {A : Type _} [Category A] [hsa : HasSeqColimits A]
   variable {B : Type _} [Category B] [hsb : HasSeqColimits B]
   variable (F : C ⥤ A)
   variable (G : C ⥤ B)
 
-  -- Presheaf C := Cᵒᵖ ⥤ ?
+  section
+  variable (C)
+  abbrev Presheaf := Cᵒᵖ ⥤ Type u
+  end
 
-  -- def Fs : Presheaf A ⥤ Presheaf C
-  -- def Gs : Presheaf A ⥤ Presheaf C
+  def Fs : Presheaf A ⥤ Presheaf C := sorry -- TODO: restriction of F
+  def Gs : Presheaf B ⥤ Presheaf C := sorry
   -- TODO: and then use these with proj_adj_left andproj_adj_right?
   -- TODO: Pullback Fs Gs, then (Presheaf (Pullback Fs Gs) ⥤ A) and (Presheaf (Pullback Fs Gs) ⥤ B)
 
-end FutureTODOs
+end Part3
 
 end
