@@ -15,29 +15,6 @@ variable {L : A ⥤ C}
 variable {R : B ⥤ C}
 variable (F : J ⥤ OplaxPullbackThing L R)
 
--- instance hasLimit
---   (F : J ⥤ OplaxPullbackThing L R)
---   [HasLimit (F ⋙ leftFunctor   L R)]
---   [HasLimit (F ⋙ middleFunctor L R)]
---   [HasLimit (F ⋙ rightFunctor  L R)]
---   [PreservesLimit (F ⋙ rightFunctor L R) R]
---   : HasLimit F
---   := sorry
---
--- instance hasLimitsOfShape
---   [HasLimitsOfShape J A]
---   [HasLimitsOfShape J B]
---   [PreservesLimitsOfShape J L]
---   : HasLimitsOfShape J (OplaxPullbackThing L R)
---   where
---
--- instance hasLimitsOfSize
---   [HasLimitsOfSize.{s,s'} A]
---   [HasLimitsOfSize.{s,s'} B]
---   [PreservesLimitsOfSize.{s,s'} R]
---   : HasLimitsOfSize.{s,s'} (OplaxPullbackThing L R)
---   := fun _ _ => inferInstance
-
 @[simps!]
 def coconePrecompose_llm
   (c : Cocone (F ⋙ leftFunctor L R))
@@ -91,7 +68,7 @@ def isColimit
     wl := tm.hom_ext fun j => by
       -- LHS
       rewrite [cocone_pt_homl,tm.fac_assoc,coconePrecompose_llm_ι_app,Category.assoc,← L.map_comp,tl.fac]
-      simp only [llm]
+      -- simp only [llm]
       rewrite [(leftFunctor L R).mapCocone_ι_app,leftFunctor_map]
 
       -- RHS
@@ -101,7 +78,7 @@ def isColimit
     wr := tm.hom_ext fun j => by
       -- LHS
       rewrite [cocone_pt_homr,tm.fac_assoc,coconePrecompose_rrm_ι_app,Category.assoc,← R.map_comp,tr.fac]
-      simp only [rrm]
+      -- simp only [rrm]
       rewrite [(rightFunctor L R).mapCocone_ι_app,rightFunctor_map]
 
       -- RHS

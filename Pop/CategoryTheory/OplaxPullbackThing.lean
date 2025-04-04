@@ -12,7 +12,9 @@ namespace CategoryTheory
 variable {A : Type _} [Category A]
 variable {B : Type _} [Category B]
 variable {C : Type _} [Category C]
+variable {D : Type _} [Category D]
 
+-- TODO: One could try to rewrite this using a shape of `Option J` similar to WidePullback, lessening duplicated proofs, but the universes would result in a less general definition. ULift exists though.
 structure OplaxPullbackThing (L : A ⥤ C) (R : B ⥤ C) where
   left   : A
   middle : C
@@ -53,6 +55,21 @@ instance category : Category (OplaxPullbackThing L R) where
     right  := f.right  ≫ g.right
   }
 
+@[simps]
+def flip : OplaxPullbackThing L R ⥤ OplaxPullbackThing R L where
+  obj o := {
+    left   := o.right
+    middle := o.middle
+    right  := o.left
+    homl   := o.homr
+    homr   := o.homl
+  }
+  map f := {
+    left   := f.right
+    middle := f.middle
+    right  := f.left
+  }
+
 section
   variable (L) (R)
 
@@ -71,39 +88,69 @@ section
     obj x := x.right
     map f := f.right
 
+  @[simps]
   def llm : NatTrans (middleFunctor L R) (leftFunctor L R ⋙ L) where
     app := homl
 
+  @[simps]
   def rrm : NatTrans (middleFunctor L R) (rightFunctor L R ⋙ R) where
     app := homr
 
-  def byComma : Comma L R ⥤ OplaxPullbackThing L R where
-    obj p := {
-      left   := p.left
-      middle := L.obj p.left
-      right  := p.right
+  @[simps]
+  def liftL
+    (da : D ⥤ A)
+    (db : D ⥤ B)
+    (p : da ⋙ L ⟶ db ⋙ R)
+    : D ⥤ OplaxPullbackThing L R
+  where
+    obj d := {
+      left   := da.obj d
+      middle := L.obj (da.obj d)
+      right  := db.obj d
       homl   := 𝟙 _
-      homr   := p.hom
+      homr   := p.app d
     }
     map f := {
-      left := f.left
-      middle := L.map f.left
-      right := f.right
+      left   := da.map f
+      middle := L.map (da.map f)
+      right  := db.map f
+      wr := by
+        simp only
+        rewrite [← Functor.comp_map,← Functor.comp_map]
+        exact (p.naturality f).symm
     }
 
-  def byFlippedComma : Comma R L ⥤ OplaxPullbackThing L R where
-    obj p := {
-      left   := p.right
-      middle := R.obj p.left
-      right  := p.left
-      homl   := p.hom
+  @[simps]
+  def liftR
+    (da : D ⥤ A)
+    (db : D ⥤ B)
+    (p : db ⋙ R ⟶ da ⋙ L)
+    : D ⥤ OplaxPullbackThing L R
+  where
+    obj d := {
+      left   := da.obj d
+      middle := R.obj (db.obj d)
+      right  := db.obj d
+      homl   := p.app d
       homr   := 𝟙 _
     }
     map f := {
-      left := f.right
-      middle := R.map f.left
-      right := f.left
+      left   := da.map f
+      middle := R.map (db.map f)
+      right  := db.map f
+      wl := by
+        simp only
+        rewrite [← Functor.comp_map,← Functor.comp_map]
+        exact (p.naturality f).symm
     }
+
+  @[simps!]
+  def byComma : Comma L R ⥤ OplaxPullbackThing L R
+    := liftL L R (Comma.fst L R) (Comma.snd L R) (Comma.natTrans L R)
+
+  @[simps!]
+  def byFlippedComma : Comma R L ⥤ OplaxPullbackThing L R
+    := liftR L R (Comma.snd R L) (Comma.fst R L) (Comma.natTrans R L)
 end
 
 section
