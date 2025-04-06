@@ -138,9 +138,9 @@ namespace Lemma2
   variable (Fadj : Fb ⊣ F)
   variable (Gadj : Gb ⊣ G)
 
-  def Pl  : Set (OplaxPullbackThing F G) := fun p => IsIso p.homl
-  def Pr  : Set (OplaxPullbackThing F G) := fun p => IsIso p.homr
-  def Plr : Set (OplaxPullbackThing F G) := (Pl F G) ∩ (Pr F G)
+  def Pl  : Set (OplaxPullbackThing F G) := fun p => IsIso p.homl -- Partiallyₗ-oplax pullback.
+  def Pr  : Set (OplaxPullbackThing F G) := fun p => IsIso p.homr -- Partiallyᵣ-oplax pullback.
+  def Plr : Set (OplaxPullbackThing F G) := (Pl F G) ∩ (Pr F G)   -- Pullback.
 
   def comma_pl : Comma F G ⥤ FullSubcategory (Pl F G)
     := FullSubcategory.lift
@@ -176,7 +176,7 @@ namespace Lemma2
       right := f.left
     }
 
-  -- TODO: No timeout, but a lot of time? There should be a better way
+  -- TODO: No timeout, but takes a lot of time? There should be a better way
   -- noncomputable def comma_pl_inverse : comma_pl F G ⋙ pl_comma F G ≅ 𝟭 (Comma F G) := by
   --   simp only [comma_pl,pl_comma,OplaxPullbackThing.byComma]
   --   exact {
@@ -226,7 +226,7 @@ namespace Lemma2
   --   }
 
   -- TODO: Maybe there is an easier way
-  instance Pl_closed_iso : IsClosedUnderIsomorphisms (Pl F G) := sorry
+  instance Pl.closed_iso : IsClosedUnderIsomorphisms (Pl F G) := sorry
     -- where
     -- of_iso i p := by
     --   obtain ⟨f,⟨i1,i2⟩⟩ := p.out
@@ -238,7 +238,85 @@ namespace Lemma2
     --   . sorry
     --   . exact F.map (OplaxPullbackThing.leftIso i).inv ≫ f ≫ (OplaxPullbackThing.middleIso i).hom
     --   -- exact {out := ⟨ , ⟨sorry , sorry⟩⟩}
-  instance Pr_closed_iso : IsClosedUnderIsomorphisms (Pr F G) := sorry
+  instance Pr.closed_iso : IsClosedUnderIsomorphisms (Pr F G) := sorry
+
+  local instance [hc : HasSeqColimits C] : HasSeqColimits (OplaxPullbackThing F G)
+    := OplaxPullbackThing.hasColimitsOfShape
+
+  section
+    variable {F G}
+    def OplaxPullbackThing.FullSubcategory.leftFunctor (S : Set (OplaxPullbackThing F G)) : FullSubcategory S ⥤ A
+      := fullSubcategoryInclusion S ⋙ OplaxPullbackThing.leftFunctor F G
+
+    def OplaxPullbackThing.FullSubcategory.middleFunctor (S : Set (OplaxPullbackThing F G)) : FullSubcategory S ⥤ C
+      := fullSubcategoryInclusion S ⋙ OplaxPullbackThing.middleFunctor F G
+
+    def OplaxPullbackThing.FullSubcategory.rightFunctor (S : Set (OplaxPullbackThing F G)) : FullSubcategory S ⥤ B
+      := fullSubcategoryInclusion S ⋙ OplaxPullbackThing.rightFunctor F G
+  end
+
+  abbrev Pl.left   : FullSubcategory (Pl  F G) ⥤ A := OplaxPullbackThing.FullSubcategory.leftFunctor  (Pl  F G)
+  abbrev Pr.left   : FullSubcategory (Pl  F G) ⥤ A := OplaxPullbackThing.FullSubcategory.leftFunctor  (Pl  F G)
+  abbrev Plr.left  : FullSubcategory (Plr F G) ⥤ A := OplaxPullbackThing.FullSubcategory.leftFunctor  (Plr F G)
+  abbrev Pl.right  : FullSubcategory (Pl  F G) ⥤ B := OplaxPullbackThing.FullSubcategory.rightFunctor (Pl  F G)
+  abbrev Pr.right  : FullSubcategory (Pl  F G) ⥤ B := OplaxPullbackThing.FullSubcategory.rightFunctor (Pl  F G)
+  abbrev Plr.right : FullSubcategory (Plr F G) ⥤ B := OplaxPullbackThing.FullSubcategory.rightFunctor (Plr F G)
+
+  def OplaxPullbackThing.unleft : A ⥤ OplaxPullbackThing F G
+    := OplaxPullbackThing.liftL F G
+      (𝟭 A)
+      (F ⋙ Gb)
+      ((Functor.leftUnitor F).hom ≫ (Functor.rightUnitor F).inv ≫ whiskerLeft F Gadj.unit ≫ (Functor.associator F Gb G).inv)
+
+  def OplaxPullbackThing.unright : B ⥤ OplaxPullbackThing F G
+    := OplaxPullbackThing.liftR F G
+      (G ⋙ Fb)
+      (𝟭 B)
+      ((Functor.leftUnitor G).hom ≫ (Functor.rightUnitor G).inv ≫ whiskerLeft G Fadj.unit ≫ (Functor.associator G Fb F).inv)
+
+  def Pl.unleft : A ⥤ FullSubcategory (Pl F G)
+    := FullSubcategory.lift
+      (Pl F G)
+      (OplaxPullbackThing.unleft F G Gb Gadj)
+      (fun a => IsIso.id (F.obj a))
+
+  def Pl.unright : B ⥤ FullSubcategory (Pl F G)
+    := FullSubcategory.lift
+      (Pl F G)
+      (OplaxPullbackThing.unright F G Fb Fadj)
+      (fun b => by simp [OplaxPullbackThing.unright,OplaxPullbackThing.liftR,Pl] ; sorry)
+
+  def Pr.unright : B ⥤ FullSubcategory (Pr F G)
+    := FullSubcategory.lift
+      (Pr F G)
+      (OplaxPullbackThing.unright F G Fb Fadj)
+      (fun b => IsIso.id (G.obj b))
+
+  noncomputable def Pl.unleft_left_adj : Pl.unleft F G Gb Gadj ⊣ Pl.left F G
+    := Adjunction.CoreEtaInvertibleHom.mk
+      (𝟙 _)
+      (fun {a}{o} l =>
+        let m : F.obj a ⟶ o.obj.middle := F.map l ≫ inv (o.obj.homl) (I := o.property)
+        {
+          left := l
+          middle := m
+          right := (Gadj.homEquiv _ _).invFun (m ≫ o.obj.homr)
+          wl := by simp [m,Pl.unleft,OplaxPullbackThing.unleft]
+          wr := by simp [m,Pl.unleft,OplaxPullbackThing.unleft] ; sorry -- aesop_cat
+        }
+      )
+      (by
+        intro a o f
+        simp [Function.LeftInverse,Pl.unleft,OplaxPullbackThing.unleft,Adjunction.CoreEtaInvertibleHom.hom,OplaxPullbackThing.FullSubcategory.leftFunctor,Pl.unleft]
+        apply OplaxPullbackThing.Hom.ext
+        . simp
+        . simp ; sorry
+        . simp ; sorry
+      )
+      sorry
+
+  def unright_right_adj : OplaxPullbackThing.unright F G Fb Fadj ⊣ OplaxPullbackThing.rightFunctor F G
+    := sorry
 
   -- TODO: Something is missing here
   def unincl_pl : OplaxPullbackThing F G ⥤ FullSubcategory (Pl F G) :=
@@ -249,87 +327,32 @@ namespace Lemma2
 
   def unincl_pr : OplaxPullbackThing F G ⥤ FullSubcategory (Pr F G) := sorry
 
-  instance Pl_refl : Reflective (fullSubcategoryInclusion (Pl F G)) where
+  instance Pl.reflective : Reflective (fullSubcategoryInclusion (Pl F G)) where
     L := unincl_pl F G
     adj := sorry
 
-  instance Pr_refl : Reflective (fullSubcategoryInclusion (Pr F G)) where
+  instance Pr.reflective : Reflective (fullSubcategoryInclusion (Pr F G)) where
     L := unincl_pr F G
     adj := sorry
 
-  local instance [hc : HasSeqColimits C] : HasSeqColimits (OplaxPullbackThing F G)
-    := OplaxPullbackThing.hasColimitsOfShape
-
   -- TODO: Can be generalised?
-  def Pl_closed_seqColim : ClosedUnderColimitsOfShape ℕ (Pl F G) := sorry
-  def Pr_closed_seqColim : ClosedUnderColimitsOfShape ℕ (Pr F G) := sorry
+  def Pl.closed_seqColim : ClosedUnderColimitsOfShape ℕ (Pl F G) := sorry
+  def Pr.closed_seqColim : ClosedUnderColimitsOfShape ℕ (Pr F G) := sorry
 
-  noncomputable def Plr_refl : Reflective (fullSubcategoryInclusion (Plr F G))
-    := intersectionReflective (Pl F G) (Pr F G) (Pl_closed_seqColim F G) (Pr_closed_seqColim F G)
+  noncomputable def Plr.reflective : Reflective (fullSubcategoryInclusion (Plr F G))
+    := intersectionReflective (Pl F G) (Pr F G) (Pl.closed_seqColim F G) (Pr.closed_seqColim F G)
 
-  def proj_a : FullSubcategory (Plr F G) ⥤ A
-    := fullSubcategoryInclusion (Plr F G) ⋙ OplaxPullbackThing.leftFunctor F G
+  noncomputable def Plr.unleft : A ⥤ FullSubcategory (Plr F G)
+    := OplaxPullbackThing.unleft F G Gb Gadj ⋙ IntersectionReflective.L (Pl.closed_seqColim F G) (Pr.closed_seqColim F G)
 
-  def proj_b : FullSubcategory (Plr F G) ⥤ B
-    := fullSubcategoryInclusion (Plr F G) ⋙ OplaxPullbackThing.rightFunctor F G
+  noncomputable def Plr.unright : B ⥤ FullSubcategory (Plr F G)
+    := OplaxPullbackThing.unright F G Fb Fadj ⋙ IntersectionReflective.L (Pl.closed_seqColim F G) (Pr.closed_seqColim F G)
 
-  def unleft : A ⥤ OplaxPullbackThing F G
-    := OplaxPullbackThing.liftL F G
-      (𝟭 A)
-      (F ⋙ Gb)
-      ((Functor.leftUnitor F).hom ≫ (Functor.rightUnitor F).inv ≫ whiskerLeft F Gadj.unit ≫ (Functor.associator F Gb G).inv)
+  noncomputable def proj_adj_left : Plr.unleft F G Gb Gadj ⊣ Plr.left F G
+    := Adjunction.comp (unleft_left_adj _ _ _ _) (Plr.reflective _ _).adj
 
-  def unright : B ⥤ OplaxPullbackThing F G
-    := OplaxPullbackThing.liftR F G
-      (G ⋙ Fb)
-      (𝟭 B)
-      ((Functor.leftUnitor G).hom ≫ (Functor.rightUnitor G).inv ≫ whiskerLeft G Fadj.unit ≫ (Functor.associator G Fb F).inv)
-
-  -- TODO: This will probably not work. Form adj from unleft composed with proj_a instead?
-  noncomputable def unleft_left_adj : unleft F G Gb Gadj ⊣ OplaxPullbackThing.leftFunctor F G
-    := Adjunction.CoreEtaInvertibleHom.mk
-      (𝟙 _)
-      (fun {a}{o} l =>
-        let m := F.map l ≫ inv (o.homl) (I := sorry)
-        {
-          left := l
-          middle := m
-          right := (Gadj.homEquiv _ _).invFun (m ≫ o.homr)
-          wl := by simp [m,unleft]
-          wr := by simp [m] ; aesop_cat
-        }
-      )
-        -- by
-        -- simp [unleft,OplaxPullbackThing.liftL,OplaxPullbackThing.leftFunctor] at f
-        -- simp [unleft,OplaxPullbackThing.liftL,OplaxPullbackThing.leftFunctor]
-        -- constructor
-        -- . sorry
-        -- . sorry
-        -- . sorry
-        -- . sorry
-        -- . sorry
-      sorry
-      sorry
-  -- where
-  --   unit := 𝟙 _
-  --   counit := by
-  --     simp [unleft,OplaxPullbackThing.liftL,OplaxPullbackThing.leftFunctor]
-  --     sorry
-
-  def unright_right_adj : unright F G Fb Fadj ⊣ OplaxPullbackThing.rightFunctor F G
-    := sorry
-
-  noncomputable def unproj_a : A ⥤ FullSubcategory (Plr F G)
-    := unleft F G Gb Gadj ⋙ IntersectionReflective.L (Pl_closed_seqColim F G) (Pr_closed_seqColim F G)
-
-  noncomputable def unproj_b : B ⥤ FullSubcategory (Plr F G)
-    := unright F G Fb Fadj ⋙ IntersectionReflective.L (Pl_closed_seqColim F G) (Pr_closed_seqColim F G)
-
-  noncomputable def proj_adj_left : unproj_a F G Gb Gadj ⊣ proj_a F G
-    := Adjunction.comp (unleft_left_adj _ _ _ _) (Plr_refl _ _).adj
-
-  noncomputable def proj_adj_right : unproj_b F G Fb Fadj ⊣ proj_b F G
-    := Adjunction.comp (unright_right_adj _ _ _ _) (Plr_refl _ _).adj
+  noncomputable def proj_adj_right : Plr.unright F G Fb Fadj ⊣ Plr.right F G
+    := Adjunction.comp (unright_right_adj _ _ _ _) (Plr.reflective _ _).adj
 
 end Lemma2
 
