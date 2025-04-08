@@ -10,10 +10,10 @@ import Mathlib.Order.Monotone.Basic
 import Mathlib.Order.Monotone.Defs
 import Pop.CategoryExtras
 import Pop.CategoryTheory.Adjunction.MkExtras
-import Pop.CategoryTheory.Limits.OplaxPullbackThing
+import Pop.CategoryTheory.Limits.OplaxPullback
 import Pop.CategoryTheory.Limits.Shapes.SeqColimit
-import Pop.CategoryTheory.OplaxPullbackThing
-import Pop.CategoryTheory.OplaxPullbackThing.Comma
+import Pop.CategoryTheory.OplaxPullback
+import Pop.CategoryTheory.OplaxPullback.Comma
 import Pop.NatCategoryExtras
 import Pop.NatExtras
 import Pop.Util
@@ -134,37 +134,37 @@ namespace Lemma2
   variable (Fadj : Fb ⊣ F)
   variable (Gadj : Gb ⊣ G)
 
-  def Pl  : Set (OplaxPullbackThing F G) := OplaxPullbackThing.CommaLeft F G
-  def Pr  : Set (OplaxPullbackThing F G) := OplaxPullbackThing.CommaRight F G
-  def Plr : Set (OplaxPullbackThing F G) := (Pl F G) ∩ (Pr F G) -- Pullback.
+  def Pl  : Set (OplaxPullback F G) := OplaxPullback.CommaLeft F G
+  def Pr  : Set (OplaxPullback F G) := OplaxPullback.CommaRight F G
+  def Plr : Set (OplaxPullback F G) := (Pl F G) ∩ (Pr F G) -- Pullback.
 
   section
     variable {F G}
-    def OplaxPullbackThing.FullSubcategory.leftFunctor (S : Set (OplaxPullbackThing F G)) : FullSubcategory S ⥤ A
-      := fullSubcategoryInclusion S ⋙ OplaxPullbackThing.leftFunctor F G
+    def OplaxPullback.FullSubcategory.leftFunctor (S : Set (OplaxPullback F G)) : FullSubcategory S ⥤ A
+      := fullSubcategoryInclusion S ⋙ OplaxPullback.leftFunctor F G
 
-    def OplaxPullbackThing.FullSubcategory.middleFunctor (S : Set (OplaxPullbackThing F G)) : FullSubcategory S ⥤ C
-      := fullSubcategoryInclusion S ⋙ OplaxPullbackThing.middleFunctor F G
+    def OplaxPullback.FullSubcategory.middleFunctor (S : Set (OplaxPullback F G)) : FullSubcategory S ⥤ C
+      := fullSubcategoryInclusion S ⋙ OplaxPullback.middleFunctor F G
 
-    def OplaxPullbackThing.FullSubcategory.rightFunctor (S : Set (OplaxPullbackThing F G)) : FullSubcategory S ⥤ B
-      := fullSubcategoryInclusion S ⋙ OplaxPullbackThing.rightFunctor F G
+    def OplaxPullback.FullSubcategory.rightFunctor (S : Set (OplaxPullback F G)) : FullSubcategory S ⥤ B
+      := fullSubcategoryInclusion S ⋙ OplaxPullback.rightFunctor F G
   end
 
-  abbrev Pl.left   : FullSubcategory (Pl  F G) ⥤ A := OplaxPullbackThing.FullSubcategory.leftFunctor  (Pl  F G)
-  abbrev Pr.left   : FullSubcategory (Pl  F G) ⥤ A := OplaxPullbackThing.FullSubcategory.leftFunctor  (Pl  F G)
-  abbrev Plr.left  : FullSubcategory (Plr F G) ⥤ A := OplaxPullbackThing.FullSubcategory.leftFunctor  (Plr F G)
-  abbrev Pl.right  : FullSubcategory (Pl  F G) ⥤ B := OplaxPullbackThing.FullSubcategory.rightFunctor (Pl  F G)
-  abbrev Pr.right  : FullSubcategory (Pl  F G) ⥤ B := OplaxPullbackThing.FullSubcategory.rightFunctor (Pl  F G)
-  abbrev Plr.right : FullSubcategory (Plr F G) ⥤ B := OplaxPullbackThing.FullSubcategory.rightFunctor (Plr F G)
+  abbrev Pl.left   : FullSubcategory (Pl  F G) ⥤ A := OplaxPullback.FullSubcategory.leftFunctor  (Pl  F G)
+  abbrev Pr.left   : FullSubcategory (Pl  F G) ⥤ A := OplaxPullback.FullSubcategory.leftFunctor  (Pl  F G)
+  abbrev Plr.left  : FullSubcategory (Plr F G) ⥤ A := OplaxPullback.FullSubcategory.leftFunctor  (Plr F G)
+  abbrev Pl.right  : FullSubcategory (Pl  F G) ⥤ B := OplaxPullback.FullSubcategory.rightFunctor (Pl  F G)
+  abbrev Pr.right  : FullSubcategory (Pl  F G) ⥤ B := OplaxPullback.FullSubcategory.rightFunctor (Pl  F G)
+  abbrev Plr.right : FullSubcategory (Plr F G) ⥤ B := OplaxPullback.FullSubcategory.rightFunctor (Plr F G)
 
-  def OplaxPullbackThing.unleft : A ⥤ OplaxPullbackThing F G
-    := OplaxPullbackThing.liftL F G
+  def OplaxPullback.unleft : A ⥤ OplaxPullback F G
+    := OplaxPullback.liftL F G
       (𝟭 A)
       (F ⋙ Gb)
       ((Functor.leftUnitor F).hom ≫ (Functor.rightUnitor F).inv ≫ whiskerLeft F Gadj.unit ≫ (Functor.associator F Gb G).inv)
 
-  def OplaxPullbackThing.unright : B ⥤ OplaxPullbackThing F G
-    := OplaxPullbackThing.liftR F G
+  def OplaxPullback.unright : B ⥤ OplaxPullback F G
+    := OplaxPullback.liftR F G
       (G ⋙ Fb)
       (𝟭 B)
       ((Functor.leftUnitor G).hom ≫ (Functor.rightUnitor G).inv ≫ whiskerLeft G Fadj.unit ≫ (Functor.associator G Fb F).inv)
@@ -172,13 +172,13 @@ namespace Lemma2
   def Pl.unleft : A ⥤ FullSubcategory (Pl F G)
     := FullSubcategory.lift
       (Pl F G)
-      (OplaxPullbackThing.unleft F G Gb Gadj)
+      (OplaxPullback.unleft F G Gb Gadj)
       (fun a => IsIso.id (F.obj a))
 
   def Pr.unright : B ⥤ FullSubcategory (Pr F G)
     := FullSubcategory.lift
       (Pr F G)
-      (OplaxPullbackThing.unright F G Fb Fadj)
+      (OplaxPullback.unright F G Fb Fadj)
       (fun b => IsIso.id (G.obj b))
 
   noncomputable def Pl.unleft_left_adj : Pl.unleft F G Gb Gadj ⊣ Pl.left F G
@@ -190,31 +190,31 @@ namespace Lemma2
           left := l
           middle := m
           right := (Gadj.homEquiv _ _).invFun (m ≫ o.obj.homr)
-          wl := by simp [m,Pl.unleft,OplaxPullbackThing.unleft]
-          wr := by simp [m,Pl.unleft,OplaxPullbackThing.unleft] ; sorry -- aesop_cat
+          wl := by simp [m,Pl.unleft,OplaxPullback.unleft]
+          wr := by simp [m,Pl.unleft,OplaxPullback.unleft] ; sorry -- aesop_cat
         }
       )
       (by
         intro a o f
-        simp [Function.LeftInverse,Pl.unleft,OplaxPullbackThing.unleft,Adjunction.CoreEtaInvertibleHom.hom,OplaxPullbackThing.FullSubcategory.leftFunctor,Pl.unleft]
-        apply OplaxPullbackThing.Hom.ext
+        simp [Function.LeftInverse,Pl.unleft,OplaxPullback.unleft,Adjunction.CoreEtaInvertibleHom.hom,OplaxPullback.FullSubcategory.leftFunctor,Pl.unleft]
+        apply OplaxPullback.Hom.ext
         . simp
         . simp ; sorry
         . simp ; sorry
       )
       sorry
 
-  def unright_right_adj : OplaxPullbackThing.unright F G Fb Fadj ⊣ OplaxPullbackThing.rightFunctor F G
+  def unright_right_adj : OplaxPullback.unright F G Fb Fadj ⊣ OplaxPullback.rightFunctor F G
     := sorry
 
   -- TODO: Something is missing here
-  def Pl.unincl : OplaxPullbackThing F G ⥤ FullSubcategory (Pl F G) :=
+  def Pl.unincl : OplaxPullback F G ⥤ FullSubcategory (Pl F G) :=
     FullSubcategory.lift
       (Pl F G)
       sorry
       sorry
 
-  def Pr.unincl : OplaxPullbackThing F G ⥤ FullSubcategory (Pr F G) := sorry
+  def Pr.unincl : OplaxPullback F G ⥤ FullSubcategory (Pr F G) := sorry
 
   def Pl.unincl_incl_adj : Pl.unincl F G ⊣ fullSubcategoryInclusion (Pl F G) := sorry
   def Pr.unincl_incl_adj : Pr.unincl F G ⊣ fullSubcategoryInclusion (Pr F G) := sorry
@@ -223,13 +223,13 @@ namespace Lemma2
   def Pr.closed_seqColim [pg : PreservesColimitsOfShape J G] : ClosedUnderColimitsOfShape J (Pr F G) := sorry
 
   local instance Pl.closed_iso : IsClosedUnderIsomorphisms (Pl F G)
-    := CategoryTheory.natIso_isClosedUnderIso (OplaxPullbackThing.llm F G)
+    := CategoryTheory.natIso_isClosedUnderIso (OplaxPullback.llm F G)
   local instance Pr.closed_iso : IsClosedUnderIsomorphisms (Pr F G)
-    := CategoryTheory.natIso_isClosedUnderIso (OplaxPullbackThing.rrm F G)
-  local instance [hc : HasSeqColimits C] : HasSeqColimits (OplaxPullbackThing F G)
-    := OplaxPullbackThing.hasColimitsOfShape
+    := CategoryTheory.natIso_isClosedUnderIso (OplaxPullback.rrm F G)
+  local instance [hc : HasSeqColimits C] : HasSeqColimits (OplaxPullback F G)
+    := OplaxPullback.hasColimitsOfShape
 
-  noncomputable def Plr.unincl : OplaxPullbackThing F G ⥤ FullSubcategory (Plr F G)
+  noncomputable def Plr.unincl : OplaxPullback F G ⥤ FullSubcategory (Plr F G)
     := IntersectionReflective.reflector
       (Pl.unincl_incl_adj F G)
       (Pr.unincl_incl_adj F G)
@@ -248,10 +248,10 @@ namespace Lemma2
       (cib := Pr.closed_iso F G)
 
   noncomputable def Plr.unleft : A ⥤ FullSubcategory (Plr F G)
-    := OplaxPullbackThing.unleft F G Gb Gadj ⋙ Plr.unincl F G
+    := OplaxPullback.unleft F G Gb Gadj ⋙ Plr.unincl F G
 
   noncomputable def Plr.unright : B ⥤ FullSubcategory (Plr F G)
-    := OplaxPullbackThing.unright F G Fb Fadj ⋙ Plr.unincl F G
+    := OplaxPullback.unright F G Fb Fadj ⋙ Plr.unincl F G
 
   noncomputable def proj_adj_left : Plr.unleft F G Gb Gadj ⊣ Plr.left F G
     := Adjunction.comp (unleft_left_adj _ _ _ _) (Plr.unincl_incl_adj _ _)

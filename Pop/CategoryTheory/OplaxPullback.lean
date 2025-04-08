@@ -15,7 +15,7 @@ variable {C : Type _} [Category C]
 variable {D : Type _} [Category D]
 
 -- TODO: One could try to rewrite this using a shape of `Option J` similar to WidePullback, lessening duplicated proofs, but the universes would result in a less general definition. ULift exists though.
-structure OplaxPullbackThing (L : A ⥤ C) (R : B ⥤ C) where
+structure OplaxPullback (L : A ⥤ C) (R : B ⥤ C) where
   left   : A
   middle : C
   right  : B
@@ -25,10 +25,10 @@ structure OplaxPullbackThing (L : A ⥤ C) (R : B ⥤ C) where
 variable {L : A ⥤ C}
 variable {R : B ⥤ C}
 
-namespace OplaxPullbackThing
+namespace OplaxPullback
 
 @[ext]
-structure Hom (x y : OplaxPullbackThing L R) where
+structure Hom (x y : OplaxPullback L R) where
   left   : x.left   ⟶ y.left
   middle : x.middle ⟶ y.middle
   right  : x.right  ⟶ y.right
@@ -36,13 +36,13 @@ structure Hom (x y : OplaxPullbackThing L R) where
   wr : x.homr ≫ R.map right = middle ≫ y.homr := by aesop_cat
 
 instance Hom.inhabited
-  [Inhabited (OplaxPullbackThing L R)]
-  : Inhabited (OplaxPullbackThing.Hom (default : OplaxPullbackThing L R) default)
+  [Inhabited (OplaxPullback L R)]
+  : Inhabited (OplaxPullback.Hom (default : OplaxPullback L R) default)
   := ⟨{ left := 𝟙 _, right := 𝟙 _, middle := 𝟙 _}⟩
 
-attribute [reassoc (attr := simp)] OplaxPullbackThing.Hom.wl OplaxPullbackThing.Hom.wr
+attribute [reassoc (attr := simp)] OplaxPullback.Hom.wl OplaxPullback.Hom.wr
 
-instance category : Category (OplaxPullbackThing L R) where
+instance category : Category (OplaxPullback L R) where
   Hom x y := Hom x y
   id x := {
     left   := 𝟙 x.left
@@ -56,7 +56,7 @@ instance category : Category (OplaxPullbackThing L R) where
   }
 
 @[simps]
-def flip : OplaxPullbackThing L R ⥤ OplaxPullbackThing R L where
+def flip : OplaxPullback L R ⥤ OplaxPullback R L where
   obj o := {
     left   := o.right
     middle := o.middle
@@ -74,17 +74,17 @@ section
   variable (L) (R)
 
   @[simps]
-  def leftFunctor : OplaxPullbackThing L R ⥤ A where
+  def leftFunctor : OplaxPullback L R ⥤ A where
     obj x := x.left
     map f := f.left
 
   @[simps]
-  def middleFunctor : OplaxPullbackThing L R ⥤ C where
+  def middleFunctor : OplaxPullback L R ⥤ C where
     obj x := x.middle
     map f := f.middle
 
   @[simps]
-  def rightFunctor : OplaxPullbackThing L R ⥤ B where
+  def rightFunctor : OplaxPullback L R ⥤ B where
     obj x := x.right
     map f := f.right
 
@@ -101,7 +101,7 @@ section
     (da : D ⥤ A)
     (db : D ⥤ B)
     (p : da ⋙ L ⟶ db ⋙ R)
-    : D ⥤ OplaxPullbackThing L R
+    : D ⥤ OplaxPullback L R
   where
     obj d := {
       left   := da.obj d
@@ -125,7 +125,7 @@ section
     (da : D ⥤ A)
     (db : D ⥤ B)
     (p : db ⋙ R ⟶ da ⋙ L)
-    : D ⥤ OplaxPullbackThing L R
+    : D ⥤ OplaxPullback L R
   where
     obj d := {
       left   := da.obj d
@@ -145,16 +145,16 @@ section
     }
 
   @[simps!]
-  def byComma : Comma L R ⥤ OplaxPullbackThing L R
+  def byComma : Comma L R ⥤ OplaxPullback L R
     := liftL L R (Comma.fst L R) (Comma.snd L R) (Comma.natTrans L R)
 
   @[simps!]
-  def byFlippedComma : Comma R L ⥤ OplaxPullbackThing L R
+  def byFlippedComma : Comma R L ⥤ OplaxPullback L R
     := liftR L R (Comma.snd R L) (Comma.fst R L) (Comma.natTrans R L)
 end
 
 section
-  variable {P₁ P₂ : OplaxPullbackThing L R}
+  variable {P₁ P₂ : OplaxPullback L R}
   variable (f : P₁ ⟶ P₂)
 
   instance [IsIso f] : IsIso f.left   := (leftFunctor   L R).map_isIso f
@@ -162,7 +162,7 @@ section
   instance [IsIso f] : IsIso f.right  := (rightFunctor  L R).map_isIso f
 end
 
-variable {x y z: OplaxPullbackThing L R}
+variable {x y z: OplaxPullback L R}
 variable (h : x ⟶ y)
 variable (i : x ≅ y)
 
@@ -196,21 +196,21 @@ end
 @[simp]
 lemma inv_left [IsIso h] : (inv h).left = inv h.left := by
   apply IsIso.eq_inv_of_hom_inv_id
-  rw [← OplaxPullbackThing.comp_left, IsIso.hom_inv_id, id_left]
+  rw [← OplaxPullback.comp_left, IsIso.hom_inv_id, id_left]
 
 @[simp]
 lemma inv_middle [IsIso h] : (inv h).middle = inv h.middle := by
   apply IsIso.eq_inv_of_hom_inv_id
-  rw [← OplaxPullbackThing.comp_middle, IsIso.hom_inv_id, id_middle]
+  rw [← OplaxPullback.comp_middle, IsIso.hom_inv_id, id_middle]
 
 @[simp]
 lemma inv_right [IsIso h] : (inv h).right = inv h.right := by
   apply IsIso.eq_inv_of_hom_inv_id
-  rw [← OplaxPullbackThing.comp_right, IsIso.hom_inv_id, id_right]
+  rw [← OplaxPullback.comp_right, IsIso.hom_inv_id, id_right]
 
 @[simps]
 def isoMk
-  {x y : OplaxPullbackThing L R}
+  {x y : OplaxPullback L R}
   (l : x.left   ≅ y.left)
   (m : x.middle ≅ y.middle)
   (r : x.right  ≅ y.right)

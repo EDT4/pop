@@ -1,8 +1,8 @@
 import Mathlib.CategoryTheory.Limits.HasLimits
 import Mathlib.CategoryTheory.Limits.Preserves.Basic
-import Pop.CategoryTheory.OplaxPullbackThing
+import Pop.CategoryTheory.OplaxPullback
 
-namespace CategoryTheory.OplaxPullbackThing
+namespace CategoryTheory.OplaxPullback
 
 open CategoryTheory.Limits
 
@@ -13,19 +13,19 @@ variable {C : Type _} [Category C]
 variable {J : Type _} [Category J]
 variable {L : A ⥤ C}
 variable {R : B ⥤ C}
-variable (F : J ⥤ OplaxPullbackThing L R)
+variable (F : J ⥤ OplaxPullback L R)
 
 @[simps!]
 def coconePrecompose_llm
   (c : Cocone (F ⋙ leftFunctor L R))
   : Cocone (F ⋙ middleFunctor L R)
-  := (Cocones.precompose (whiskerLeft F (OplaxPullbackThing.llm L R))).obj (L.mapCocone c)
+  := (Cocones.precompose (whiskerLeft F (OplaxPullback.llm L R))).obj (L.mapCocone c)
 
 @[simps!]
 def coconePrecompose_rrm
   (c : Cocone (F ⋙ rightFunctor L R))
   : Cocone (F ⋙ middleFunctor L R)
-  := (Cocones.precompose (whiskerLeft F (OplaxPullbackThing.rrm L R))).obj (R.mapCocone c)
+  := (Cocones.precompose (whiskerLeft F (OplaxPullback.rrm L R))).obj (R.mapCocone c)
 
 @[simps]
 def cocone
@@ -88,9 +88,9 @@ def isColimit
   }
   uniq s m w := by
     ext
-    . exact tl.uniq ((leftFunctor   L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullbackThing.Hom.left   (w j))
-    . exact tm.uniq ((middleFunctor L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullbackThing.Hom.middle (w j))
-    . exact tr.uniq ((rightFunctor  L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullbackThing.Hom.right  (w j))
+    . exact tl.uniq ((leftFunctor   L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.left   (w j))
+    . exact tm.uniq ((middleFunctor L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.middle (w j))
+    . exact tr.uniq ((rightFunctor  L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.right  (w j))
 
 instance hasColimit
   [hl : HasColimit (F ⋙ leftFunctor   L R)]
@@ -103,12 +103,12 @@ instance hasColimitsOfShape
   [ha : HasColimitsOfShape J A]
   [hb : HasColimitsOfShape J B]
   [hc : HasColimitsOfShape J C]
-  : HasColimitsOfShape J (OplaxPullbackThing L R)
+  : HasColimitsOfShape J (OplaxPullback L R)
   where
 
 instance hasColimitsOfSize
   [ha : HasColimitsOfSize.{s,s'} A]
   [hb : HasColimitsOfSize.{s,s'} B]
   [hc : HasColimitsOfSize.{s,s'} C]
-  : HasColimitsOfSize.{s,s'} (OplaxPullbackThing L R)
+  : HasColimitsOfSize.{s,s'} (OplaxPullback L R)
   := ⟨fun _ _ => inferInstance⟩
