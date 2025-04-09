@@ -1,8 +1,9 @@
 import Init.Core
 import Init.Prelude
 import Mathlib.CategoryTheory.Category.Basic
-import Mathlib.CategoryTheory.Comma.Basic
+import Mathlib.CategoryTheory.Equivalence
 import Mathlib.CategoryTheory.Functor.Basic
+import Mathlib.CategoryTheory.Functor.Category
 import Mathlib.CategoryTheory.Iso
 import Mathlib.CategoryTheory.NatTrans
 import Mathlib.Tactic.CategoryTheory.Reassoc
@@ -32,7 +33,7 @@ structure Hom (x y : OplaxPullback L R) where
   left   : x.left   ⟶ y.left
   middle : x.middle ⟶ y.middle
   right  : x.right  ⟶ y.right
-  wl : x.homl ≫ L.map left = middle ≫ y.homl := by aesop_cat
+  wl : x.homl ≫ L.map left  = middle ≫ y.homl := by aesop_cat
   wr : x.homr ≫ R.map right = middle ≫ y.homr := by aesop_cat
 
 instance Hom.inhabited
@@ -42,33 +43,25 @@ instance Hom.inhabited
 
 attribute [reassoc (attr := simp)] OplaxPullback.Hom.wl OplaxPullback.Hom.wr
 
-instance category : Category (OplaxPullback L R) where
-  Hom x y := Hom x y
-  id x := {
-    left   := 𝟙 x.left
-    middle := 𝟙 x.middle
-    right  := 𝟙 x.right
-  }
-  comp f g := {
-    left   := f.left   ≫ g.left
-    middle := f.middle ≫ g.middle
-    right  := f.right  ≫ g.right
-  }
+@[simps]
+abbrev Hom.id (x : OplaxPullback L R) : Hom x x := {
+  left   := 𝟙 x.left
+  middle := 𝟙 x.middle
+  right  := 𝟙 x.right
+}
 
 @[simps]
-def flip : OplaxPullback L R ⥤ OplaxPullback R L where
-  obj o := {
-    left   := o.right
-    middle := o.middle
-    right  := o.left
-    homl   := o.homr
-    homr   := o.homl
-  }
-  map f := {
-    left   := f.right
-    middle := f.middle
-    right  := f.left
-  }
+abbrev Hom.comp {x y z : OplaxPullback L R} (f : Hom x y) (g : Hom y z) : Hom x z := {
+  left   := f.left   ≫ g.left
+  middle := f.middle ≫ g.middle
+  right  := f.right  ≫ g.right
+}
+
+@[simps]
+instance category : Category (OplaxPullback L R) where
+  Hom  := Hom
+  id   := Hom.id
+  comp := Hom.comp
 
 section
   variable (L) (R)
@@ -95,63 +88,51 @@ section
   @[simps]
   def rrm : NatTrans (middleFunctor L R) (rightFunctor L R ⋙ R) where
     app := homr
-
-  @[simps]
-  def liftL
-    (da : D ⥤ A)
-    (db : D ⥤ B)
-    (p : da ⋙ L ⟶ db ⋙ R)
-    : D ⥤ OplaxPullback L R
-  where
-    obj d := {
-      left   := da.obj d
-      middle := L.obj (da.obj d)
-      right  := db.obj d
-      homl   := 𝟙 _
-      homr   := p.app d
-    }
-    map f := {
-      left   := da.map f
-      middle := L.map (da.map f)
-      right  := db.map f
-      wr := by
-        simp only
-        rewrite [← Functor.comp_map,← Functor.comp_map]
-        exact (p.naturality f).symm
-    }
-
-  @[simps]
-  def liftR
-    (da : D ⥤ A)
-    (db : D ⥤ B)
-    (p : db ⋙ R ⟶ da ⋙ L)
-    : D ⥤ OplaxPullback L R
-  where
-    obj d := {
-      left   := da.obj d
-      middle := R.obj (db.obj d)
-      right  := db.obj d
-      homl   := p.app d
-      homr   := 𝟙 _
-    }
-    map f := {
-      left   := da.map f
-      middle := R.map (db.map f)
-      right  := db.map f
-      wl := by
-        simp only
-        rewrite [← Functor.comp_map,← Functor.comp_map]
-        exact (p.naturality f).symm
-    }
-
-  @[simps!]
-  def byComma : Comma L R ⥤ OplaxPullback L R
-    := liftL L R (Comma.fst L R) (Comma.snd L R) (Comma.natTrans L R)
-
-  @[simps!]
-  def byFlippedComma : Comma R L ⥤ OplaxPullback L R
-    := liftR L R (Comma.snd R L) (Comma.fst R L) (Comma.natTrans R L)
 end
+
+@[simps]
+def lift
+  (da : D ⥤ A)
+  (db : D ⥤ B)
+  (dc : D ⥤ C)
+  (pl : NatTrans dc (da ⋙ L))
+  (pr : NatTrans dc (db ⋙ R))
+  : D ⥤ OplaxPullback L R
+where
+  obj d := {
+    left   := da.obj d
+    middle := dc.obj d
+    right  := db.obj d
+    homl   := pl.app d
+    homr   := pr.app d
+  }
+  map f := {
+    left   := da.map f
+    middle := dc.map f
+    right  := db.map f
+  }
+
+abbrev liftL (da : D ⥤ A) (db : D ⥤ B) (p : NatTrans (da ⋙ L) (db ⋙ R)) : D ⥤ OplaxPullback L R
+  := lift da db (da ⋙ L) (NatTrans.id _) p
+
+abbrev liftR (da : D ⥤ A) (db : D ⥤ B) (p : NatTrans (db ⋙ R) (da ⋙ L)) : D ⥤ OplaxPullback L R
+  := lift da db (db ⋙ R) p (NatTrans.id _)
+
+-- Alternative definition: lift (rightFunctor _ _) (leftFunctor _ _) (middleFunctor _ _) (rrm _ _) (llm _ _)
+@[simps]
+def flip : OplaxPullback L R ⥤ OplaxPullback R L where
+  obj o := {
+    left   := o.right
+    middle := o.middle
+    right  := o.left
+    homl   := o.homr
+    homr   := o.homl
+  }
+  map f := {
+    left   := f.right
+    middle := f.middle
+    right  := f.left
+  }
 
 section
   variable {P₁ P₂ : OplaxPullback L R}
@@ -183,30 +164,32 @@ section
   @[simps!] def rightIso  : x.right  ≅ y.right  := (rightFunctor  L R).mapIso i
 end
 
-section
-  variable {f : x ⟶ y} {g : y ⟶ z}
-  @[simp] theorem comp_left   : (f ≫ g).left   = f.left   ≫ g.left   := rfl
-  @[simp] theorem comp_middle : (f ≫ g).middle = f.middle ≫ g.middle := rfl
-  @[simp] theorem comp_right  : (f ≫ g).right  = f.right  ≫ g.right  := rfl
-  @[simp] theorem id_left   : Hom.left   (𝟙 x) = 𝟙 x.left   := rfl
-  @[simp] theorem id_middle : Hom.middle (𝟙 x) = 𝟙 x.middle := rfl
-  @[simp] theorem id_right  : Hom.right  (𝟙 x) = 𝟙 x.right  := rfl
-end
+def flip_invol : flip ⋙ flip ≅ 𝟭 (OplaxPullback L R) where
+  hom := 𝟙 _
+  inv := 𝟙 _
+
+-- TODO: The strict variant also holds, but is it necessary?
+-- def flip_iso : Cat.of (OplaxPullback L R) ≅ Cat.of (OplaxPullback R L) where
+--   hom := flip
+--   inv := flip
+
+def flip_equiv : OplaxPullback L R ≌ OplaxPullback R L
+  := .mk flip flip flip_invol.symm flip_invol
 
 @[simp]
 lemma inv_left [IsIso h] : (inv h).left = inv h.left := by
   apply IsIso.eq_inv_of_hom_inv_id
-  rw [← OplaxPullback.comp_left, IsIso.hom_inv_id, id_left]
+  rw [← category_comp_left, IsIso.hom_inv_id, category_id_left]
 
 @[simp]
 lemma inv_middle [IsIso h] : (inv h).middle = inv h.middle := by
   apply IsIso.eq_inv_of_hom_inv_id
-  rw [← OplaxPullback.comp_middle, IsIso.hom_inv_id, id_middle]
+  rw [← category_comp_middle, IsIso.hom_inv_id, category_id_middle]
 
 @[simp]
 lemma inv_right [IsIso h] : (inv h).right = inv h.right := by
   apply IsIso.eq_inv_of_hom_inv_id
-  rw [← OplaxPullback.comp_right, IsIso.hom_inv_id, id_right]
+  rw [← category_comp_right, IsIso.hom_inv_id, category_id_right]
 
 @[simps]
 def isoMk
