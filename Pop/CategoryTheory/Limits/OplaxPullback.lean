@@ -66,24 +66,16 @@ def isColimit
     middle := tm.desc ((middleFunctor L R).mapCocone s)
     right  := tr.desc ((rightFunctor  L R).mapCocone s)
     wl := tm.hom_ext fun j => by
-      -- LHS
-      rewrite [cocone_pt_homl,tm.fac_assoc,coconePrecompose_llm_ι_app,Category.assoc,← L.map_comp,tl.fac]
-      -- simp only [llm]
-      rewrite [(leftFunctor L R).mapCocone_ι_app,leftFunctor_map]
-
-      -- RHS
-      rewrite [tm.fac_assoc,(middleFunctor L R).mapCocone_ι_app,middleFunctor_map]
-
+      rewrite [
+        cocone_pt_homl,tm.fac_assoc,coconePrecompose_llm_ι_app,Category.assoc,← L.map_comp,tl.fac,(leftFunctor L R).mapCocone_ι_app,leftFunctor_map,
+        tm.fac_assoc,(middleFunctor L R).mapCocone_ι_app,middleFunctor_map
+      ]
       exact (s.ι.app j).wl
     wr := tm.hom_ext fun j => by
-      -- LHS
-      rewrite [cocone_pt_homr,tm.fac_assoc,coconePrecompose_rrm_ι_app,Category.assoc,← R.map_comp,tr.fac]
-      -- simp only [rrm]
-      rewrite [(rightFunctor L R).mapCocone_ι_app,rightFunctor_map]
-
-      -- RHS
-      rewrite [tm.fac_assoc,(middleFunctor L R).mapCocone_ι_app,middleFunctor_map]
-
+      rewrite [
+        cocone_pt_homr,tm.fac_assoc,coconePrecompose_rrm_ι_app,Category.assoc,← R.map_comp,tr.fac,(rightFunctor L R).mapCocone_ι_app,rightFunctor_map,
+        tm.fac_assoc,(middleFunctor L R).mapCocone_ι_app,middleFunctor_map
+      ]
       exact (s.ι.app j).wr
   }
   uniq s m w := by

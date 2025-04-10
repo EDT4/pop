@@ -14,17 +14,18 @@ variable {A : Type _} [Category A]
 variable {B : Type _} [Category B]
 variable {C : Type _} [Category C]
 variable {D : Type _} [Category D]
+variable (L : A ⥤ C)
+variable (R : B ⥤ C)
 
 -- TODO: One could try to rewrite this using a shape of `Option J` similar to WidePullback, lessening duplicated proofs, but the universes would result in a less general definition. ULift exists though.
-structure OplaxPullback (L : A ⥤ C) (R : B ⥤ C) where
+structure OplaxPullback where
   left   : A
   middle : C
   right  : B
   homl : middle ⟶ L.obj left
   homr : middle ⟶ R.obj right
 
-variable {L : A ⥤ C}
-variable {R : B ⥤ C}
+variable {L} {R}
 
 namespace OplaxPullback
 
