@@ -24,6 +24,11 @@ def from_flipped_comma : Comma R L ⥤ OplaxPullback L R
 def CommaLeft : Set (OplaxPullback L R) := fun p => IsIso p.homl
 
 namespace CommaLeft
+  variable {L R}
+
+  noncomputable def natInv {S} (p : S ⊆ CommaLeft L R) : fullSubcategoryInclusion S ⋙ leftFunctor L R ⋙ L ⟶ fullSubcategoryInclusion S ⋙ middleFunctor L R where
+    app o := inv _ (I := p (o.property))
+
   def from_comma : Comma L R ⥤ FullSubcategory (CommaLeft L R)
     := FullSubcategory.lift
       (CommaLeft L R)
@@ -42,7 +47,7 @@ namespace CommaLeft
     }
 
   -- TODO: Not really difficult proofs, but they are long due to the almost identical cases and I guess inv not being easy to simp? If naively automated, a timeout is reached.
-  noncomputable def from_to_inverse : from_comma L R ⋙ to_comma L R ≅ 𝟭 (Comma L R) := NatIso.ofComponents
+  noncomputable def from_to_inverse : from_comma ⋙ to_comma ≅ 𝟭 (Comma L R) := NatIso.ofComponents
     (fun _ => {
       hom := {
         left  := 𝟙 _
@@ -61,7 +66,7 @@ namespace CommaLeft
     })
     (by intros ; ext <;> (dsimp [to_comma,from_comma] ; rw [Category.comp_id,Category.id_comp]))
 
-  noncomputable def to_from_inverse : to_comma L R ⋙ from_comma L R ≅ 𝟭 _ := NatIso.ofComponents
+  noncomputable def to_from_inverse : to_comma ⋙ from_comma ≅ 𝟭 (FullSubcategory (CommaLeft L R)) := NatIso.ofComponents
     (fun x => {
       hom := {
         left   := 𝟙 _
@@ -147,10 +152,10 @@ namespace CommaLeft
 
   noncomputable def equiv_comma : FullSubcategory (CommaLeft L R) ≌ Comma L R
     := Equivalence.mk
-      (to_comma L R)
-      (from_comma L R)
-      (to_from_inverse L R).symm
-      (from_to_inverse L R)
+      to_comma
+      from_comma
+      to_from_inverse.symm
+      from_to_inverse
 
 end CommaLeft
 
@@ -170,18 +175,28 @@ def comma_left_right_right_left : comma_left_right L R ⋙ comma_right_left R L 
 def comma_right_left_left_right : comma_right_left L R ⋙ comma_left_right R L ≅ 𝟭 _
   := NatIso.ofComponents (fun _ => Iso.refl _)
 
+  noncomputable def equiv_comma_left_right : FullSubcategory (CommaLeft L R) ≌ FullSubcategory (CommaRight R L)
+    := Equivalence.mk
+      (comma_left_right L R)
+      (comma_right_left R L)
+      (comma_left_right_right_left L R).symm
+      (comma_right_left_left_right R L)
+
 namespace CommaRight
+  noncomputable def natInv {S} (p : S ⊆ CommaRight L R) : fullSubcategoryInclusion S ⋙ rightFunctor L R ⋙ R ⟶ fullSubcategoryInclusion S ⋙ middleFunctor L R where
+    app o := inv _ (I := p (o.property))
+
   def from_comma : Comma R L ⥤ FullSubcategory (CommaRight L R)
-    := CommaLeft.from_comma R L ⋙ comma_left_right R L
+    := CommaLeft.from_comma ⋙ comma_left_right R L
 
   noncomputable def to_comma : FullSubcategory (CommaRight L R) ⥤ Comma R L
-    := comma_right_left L R ⋙ CommaLeft.to_comma R L
+    := comma_right_left L R ⋙ CommaLeft.to_comma
 
   noncomputable def from_to_inverse : from_comma L R ⋙ to_comma L R ≅ 𝟭 (Comma R L)
-    := CommaLeft.from_to_inverse R L
+    := CommaLeft.from_to_inverse
 
   noncomputable def to_from_inverse : to_comma L R ⋙ from_comma L R ≅ 𝟭 (FullSubcategory (CommaRight L R))
-    := isoWhiskerLeft (comma_right_left L R) (isoWhiskerRight (CommaLeft.to_from_inverse R L) (comma_left_right R L))
+    := isoWhiskerLeft (comma_right_left L R) (isoWhiskerRight CommaLeft.to_from_inverse (comma_left_right R L))
 
   noncomputable def equiv_comma : FullSubcategory (CommaRight L R) ≌ Comma R L
     := Equivalence.mk
@@ -191,38 +206,3 @@ namespace CommaRight
       (from_to_inverse L R)
 
 end CommaRight
-
--- Pullback.
--- `OplaxPullback`s where both `homl` and `homr` are isomorphisms.
-def CommaLeftRight : Set (OplaxPullback L R) := (CommaLeft L R) ∩ (CommaRight L R)
-def PullbackComma : Set (Comma L R) := fun p => IsIso p.hom
-
-noncomputable def PullbackComma.flip : FullSubcategory (PullbackComma L R) ⥤ FullSubcategory (PullbackComma R L) where
-  obj o := {
-    obj := {
-      left  := o.obj.right
-      right := o.obj.left
-      hom   := inv o.obj.hom (I := o.property)
-    }
-    property := let _ : IsIso o.obj.hom := o.property ; IsIso.inv_isIso
-  }
-  map f := {
-    left  := f.right
-    right := f.left
-    w     := by rw [IsIso.comp_inv_eq,Category.assoc,IsIso.eq_inv_comp,f.w]
-  }
-
-namespace CommaLeftRight
-  def from_comma : FullSubcategory (PullbackComma L R) ⥤ FullSubcategory (CommaLeftRight L R)
-    := FullSubcategory.lift (CommaLeftRight L R)
-      (fullSubcategoryInclusion _ ⋙ OplaxPullback.from_comma L R)
-      fun o =>
-        ⟨ ((CommaLeft.from_comma L R).obj o.obj).property
-        , by
-          let tte := ((PullbackComma.flip L R).obj o).obj
-          let t := ((CommaRight.from_comma L R).obj sorry).property
-          dsimp [OplaxPullback.from_comma,CommaRight.from_comma] at *
-          exact t
-        ⟩
-
-end CommaLeftRight

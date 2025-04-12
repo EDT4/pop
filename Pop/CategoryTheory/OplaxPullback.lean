@@ -165,6 +165,8 @@ section
   @[simps!] def rightIso  : x.right  ≅ y.right  := (rightFunctor  L R).mapIso i
 end
 
+def flip_obj_invol {x : OplaxPullback L R} : flip.obj (flip.obj x) = x := rfl
+
 def flip_invol : flip ⋙ flip ≅ 𝟭 (OplaxPullback L R) where
   hom := 𝟙 _
   inv := 𝟙 _
