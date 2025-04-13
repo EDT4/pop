@@ -8,6 +8,7 @@ open CategoryTheory
 variable {A : Type _} [Category A]
 variable {B : Type _} [Category B]
 variable {C : Type _} [Category C]
+variable {D : Type _} [Category D]
 variable (L : A ⥤ C)
 variable (R : B ⥤ C)
 
@@ -183,6 +184,8 @@ def comma_right_left_left_right : comma_right_left L R ⋙ comma_left_right R L 
       (comma_right_left_left_right R L)
 
 namespace CommaRight
+  variable {L R}
+
   noncomputable def natInv {S} (p : S ⊆ CommaRight L R) : fullSubcategoryInclusion S ⋙ rightFunctor L R ⋙ R ⟶ fullSubcategoryInclusion S ⋙ middleFunctor L R where
     app o := inv _ (I := p (o.property))
 
@@ -192,17 +195,31 @@ namespace CommaRight
   noncomputable def to_comma : FullSubcategory (CommaRight L R) ⥤ Comma R L
     := comma_right_left L R ⋙ CommaLeft.to_comma
 
-  noncomputable def from_to_inverse : from_comma L R ⋙ to_comma L R ≅ 𝟭 (Comma R L)
+  noncomputable def from_to_inverse : from_comma ⋙ to_comma ≅ 𝟭 (Comma R L)
     := CommaLeft.from_to_inverse
 
-  noncomputable def to_from_inverse : to_comma L R ⋙ from_comma L R ≅ 𝟭 (FullSubcategory (CommaRight L R))
+  noncomputable def to_from_inverse : to_comma ⋙ from_comma ≅ 𝟭 (FullSubcategory (CommaRight L R))
     := isoWhiskerLeft (comma_right_left L R) (isoWhiskerRight CommaLeft.to_from_inverse (comma_left_right R L))
 
   noncomputable def equiv_comma : FullSubcategory (CommaRight L R) ≌ Comma R L
-    := Equivalence.mk
-      (to_comma L R)
-      (from_comma L R)
-      (to_from_inverse L R).symm
-      (from_to_inverse L R)
+    := Equivalence.mk to_comma from_comma to_from_inverse.symm from_to_inverse
 
 end CommaRight
+
+@[simps!]
+def Comma.lift
+  (da : D ⥤ A)
+  (db : D ⥤ B)
+  (p : (da ⋙ L) ⟶ (db ⋙ R))
+  : D ⥤ Comma L R
+where
+  obj d := {
+    left   := da.obj d
+    right  := db.obj d
+    hom    := p.app d
+  }
+  map f := {
+    left  := da.map f
+    right := db.map f
+    w  := p.naturality _
+  }

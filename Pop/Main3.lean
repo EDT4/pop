@@ -39,6 +39,7 @@ variable [cia : IsClosedUnderIsomorphisms A]
 variable [cib : IsClosedUnderIsomorphisms B]
 omit [_]
 
+
 -- TODO: Rename stuff when the proof is finished
 namespace IntersectionReflective
   def sequence : Limits.Seq (C ⥤ C) :=
@@ -151,20 +152,20 @@ namespace Lemma2
   end
 
   abbrev Pl.left   : FullSubcategory (Pl  F G) ⥤ A := OplaxPullback.FullSubcategory.leftFunctor  (Pl  F G)
-  abbrev Pr.left   : FullSubcategory (Pl  F G) ⥤ A := OplaxPullback.FullSubcategory.leftFunctor  (Pl  F G)
+  abbrev Pr.left   : FullSubcategory (Pr  F G) ⥤ A := OplaxPullback.FullSubcategory.leftFunctor  (Pr  F G)
   abbrev Plr.left  : FullSubcategory (Plr F G) ⥤ A := OplaxPullback.FullSubcategory.leftFunctor  (Plr F G)
   abbrev Pl.right  : FullSubcategory (Pl  F G) ⥤ B := OplaxPullback.FullSubcategory.rightFunctor (Pl  F G)
-  abbrev Pr.right  : FullSubcategory (Pl  F G) ⥤ B := OplaxPullback.FullSubcategory.rightFunctor (Pl  F G)
+  abbrev Pr.right  : FullSubcategory (Pr  F G) ⥤ B := OplaxPullback.FullSubcategory.rightFunctor (Pr  F G)
   abbrev Plr.right : FullSubcategory (Plr F G) ⥤ B := OplaxPullback.FullSubcategory.rightFunctor (Plr F G)
 
   def OplaxPullback.unleft : A ⥤ OplaxPullback F G
-    := OplaxPullback.liftL F G
+    := OplaxPullback.liftL
       (𝟭 A)
       (F ⋙ Gb)
       ((Functor.leftUnitor F).hom ≫ (Functor.rightUnitor F).inv ≫ whiskerLeft F Gadj.unit ≫ (Functor.associator F Gb G).inv)
 
   def OplaxPullback.unright : B ⥤ OplaxPullback F G
-    := OplaxPullback.liftR F G
+    := OplaxPullback.liftR
       (G ⋙ Fb)
       (𝟭 B)
       ((Functor.leftUnitor G).hom ≫ (Functor.rightUnitor G).inv ≫ whiskerLeft G Fadj.unit ≫ (Functor.associator G Fb F).inv)
@@ -181,38 +182,55 @@ namespace Lemma2
       (OplaxPullback.unright F G Fb Fadj)
       (fun b => IsIso.id (G.obj b))
 
-  noncomputable def Pl.unleft_left_adj : Pl.unleft F G Gb Gadj ⊣ Pl.left F G
+  def Comma.unfst : A ⥤ Comma F G
+    := OplaxPullback.Comma.lift F G
+      (𝟭 A)
+      (F ⋙ Gb)
+      ((Functor.leftUnitor F).hom ≫ (Functor.rightUnitor F).inv ≫ whiskerLeft F Gadj.unit ≫ (Functor.associator F Gb G).inv)
+
+  def Comma.unfst_fst_adj : Comma.unfst F G Gb Gadj ⊣ Comma.fst F G
     := Adjunction.CoreEtaInvertibleHom.mk
       (𝟙 (𝟭 A))
       (fun {a}{o} l =>
-        let m : F.obj a ⟶ o.obj.middle := F.map l ≫ inv (o.obj.homl) (I := o.property)
         {
           left := l
-          middle := m
-          right := (Gadj.homEquiv _ _).invFun (m ≫ o.obj.homr)
-          wl := by simp [m,Pl.unleft,OplaxPullback.unleft]
-          wr := by simp [m,Pl.unleft,OplaxPullback.unleft] ; sorry -- aesop_cat
+          right := (Gadj.homEquiv _ _).invFun (F.map l ≫ o.hom)
+          w := by simp [Comma.unfst,OplaxPullback.Comma.lift,Adjunction.homEquiv]
         }
       )
       (by
         intro a o f
-        simp [Function.LeftInverse,Pl.unleft,OplaxPullback.unleft,Adjunction.CoreEtaInvertibleHom.hom,OplaxPullback.FullSubcategory.leftFunctor,Pl.unleft]
-        apply OplaxPullback.Hom.ext
+        simp [Function.LeftInverse,OplaxPullback.unleft,Adjunction.CoreEtaInvertibleHom.hom,OplaxPullback.FullSubcategory.leftFunctor,Pl.unleft]
+        apply CommaMorphism.ext
         . simp
-        . simp ; sorry
-        . simp ; sorry
+        . simp [Comma.unfst,OplaxPullback.Comma.lift,Adjunction.homEquiv]
       )
-      sorry
+      (by simp [Function.LeftInverse,Function.RightInverse,Adjunction.CoreEtaInvertibleHom.hom])
 
-  def unright_right_adj : OplaxPullback.unright F G Fb Fadj ⊣ OplaxPullback.rightFunctor F G
-    := sorry
+  def Pl.unleft' : A ⥤ FullSubcategory (Pl F G)
+    := Comma.unfst F G Gb Gadj ⋙ OplaxPullback.CommaLeft.from_comma
+
+  def Pl.unright' : B ⥤ FullSubcategory (Pr F G)
+    := Comma.unfst G F Fb Fadj ⋙ OplaxPullback.CommaRight.from_comma
+
+  noncomputable abbrev Pl.left' : FullSubcategory (Pl F G) ⥤ A
+    := OplaxPullback.CommaLeft.to_comma ⋙ Comma.fst _ _
+
+  noncomputable abbrev Pl.right' : FullSubcategory (Pr F G) ⥤ B
+    := OplaxPullback.CommaRight.to_comma ⋙ Comma.fst _ _
+
+  noncomputable def Pl.unleft_left_adj : Pl.unleft' F G Gb Gadj ⊣ Pl.left' F G
+    := Adjunction.comp (Comma.unfst_fst_adj _ _ _ _) OplaxPullback.CommaLeft.equiv_comma.symm.toAdjunction
+
+  noncomputable def Pr.unright_right_adj : Pl.unright' F G Fb Fadj ⊣ Pl.right' F G
+    := Adjunction.comp (Comma.unfst_fst_adj _ _ _ _) OplaxPullback.CommaRight.equiv_comma.symm.toAdjunction
 
   -- TODO: Something is missing here
   def Pl.unincl : OplaxPullback F G ⥤ FullSubcategory (Pl F G) :=
     FullSubcategory.lift
       (Pl F G)
-      sorry
-      sorry
+      (𝟭 _)
+      (fun _ => by simp [Pl,OplaxPullback.CommaLeft] ; sorry)
 
   def Pr.unincl : OplaxPullback F G ⥤ FullSubcategory (Pr F G) := sorry
 
@@ -247,8 +265,14 @@ namespace Lemma2
       (cia := Pl.closed_iso F G)
       (cib := Pr.closed_iso F G)
 
+  abbrev Intersection.fstFunctor {A B : Set C} : FullSubcategory (A ∩ B : Set C) ⥤ FullSubcategory A
+    := FullSubcategory.map fun _ => And.left
+
+  abbrev Intersection.sndFunctor {A B : Set C} : FullSubcategory (A ∩ B : Set C) ⥤ FullSubcategory B
+    := FullSubcategory.map fun _ => And.right
+
   noncomputable def Plr.unleft : A ⥤ FullSubcategory (Plr F G)
-    := OplaxPullback.unleft F G Gb Gadj ⋙ Plr.unincl F G
+    := sorry ⋙ Intersection.fstFunctor (C := OplaxPullback F G) ⋙ Plr.unincl F G
 
   noncomputable def Plr.unright : B ⥤ FullSubcategory (Plr F G)
     := OplaxPullback.unright F G Fb Fadj ⋙ Plr.unincl F G
