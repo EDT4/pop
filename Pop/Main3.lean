@@ -208,25 +208,47 @@ namespace Lemma2
       )
       (by simp [Function.LeftInverse,Function.RightInverse,Adjunction.CoreEtaInvertibleHom.hom])
 
-  def OplaxPullback.to_comma : OplaxPullback F G ⥤ Comma F G
-    := OplaxPullback.leftFunctor F G ⋙ Comma.unfst F G Gb Gadj
+  noncomputable def OplaxPullback.to_comma : OplaxPullback F G ⥤ Comma F G where
+    obj o := {
+      left   := o.left
+      right  := pushout (X := Gb.obj o.middle) (Y := o.right) (Z := Gb.obj (F.obj o.left)) ((Gadj.homEquiv _ _).invFun o.homr) (Gb.map o.homl)
+      hom    := Gadj.unit.app (F.obj o.left) ≫ G.map (pushout.inr _ _)
+    }
+    map f := {
+      left := f.left
+      right := pushout.map _ _ _ _ (f.right) (Gb.map (F.map f.left)) (Gb.map f.middle)
+        (by rw [Equiv.invFun_as_coe,Adjunction.homEquiv_counit,Equiv.invFun_as_coe,Adjunction.homEquiv_counit,← Category.assoc,← Functor.map_comp,← OplaxPullback.Hom.wr,Functor.map_comp,Category.assoc,Category.assoc,Adjunction.counit_naturality])
+        (by rw [← Functor.map_comp,← Functor.map_comp,OplaxPullback.Hom.wl])
+      w := by
+        dsimp only [Adjunction.homEquiv]
+        simp [← Functor.map_comp]
+        simp only [Functor.map_comp, Adjunction.unit_naturality_assoc]
+    }
+    map_comp f g := by
+      dsimp [Adjunction.homEquiv]
+      ext <;> simp
 
-  def OplaxPullback.to_flipped_comma : OplaxPullback F G ⥤ Comma G F
-    := OplaxPullback.rightFunctor F G ⋙ Comma.unfst G F Fb Fadj
+  noncomputable def OplaxPullback.to_from_comma_adj : OplaxPullback.to_comma F G Gb Gadj ⊣ OplaxPullback.from_comma F G where
+    unit := {
+      app o := {
+        left := 𝟙 _
+        middle := o.homl
+        right := pushout.inl _ _
+        wr := by
+          simp [to_comma,OplaxPullback.from_comma,Adjunction.homEquiv,(·≫·)]
+          aesop?
+          sorry
+      }
+    }
+    counit := sorry
 
-  def OplaxPullback.to_from_comma_adj : OplaxPullback.to_comma F G Gb Gadj ⊣ OplaxPullback.from_comma F G
-    := Adjunction.CoreEtaInvertibleHom.mk
-      (by simp [to_comma,OplaxPullback.from_comma,OplaxPullback.leftFunctor,OplaxPullback.liftL,Comma.fst,Comma.snd,Comma.natTrans,Comma.unfst,(·⋙·)] ; sorry)
-      sorry
-      sorry
-      sorry
+  noncomputable def OplaxPullback.to_flipped_comma : OplaxPullback F G ⥤ Comma G F
+    := OplaxPullback.flip ⋙ OplaxPullback.to_comma G F Fb Fadj
 
-  def OplaxPullback.to_from_flipped_comma_adj : OplaxPullback.to_flipped_comma F G Fb Fadj ⊣ OplaxPullback.from_flipped_comma F G
-    := Adjunction.CoreEtaInvertibleHom.mk
-      (by simp [to_comma,OplaxPullback.from_comma,OplaxPullback.leftFunctor,OplaxPullback.liftL,Comma.fst,Comma.snd,Comma.natTrans,Comma.unfst,(·⋙·)] ; sorry)
-      sorry
-      sorry
-      sorry
+  noncomputable def OplaxPullback.to_from_flipped_comma_adj : OplaxPullback.to_flipped_comma F G Fb Fadj ⊣ OplaxPullback.from_flipped_comma F G
+    := by
+      rw [← OplaxPullback.from_comma_flip]
+      exact Adjunction.comp OplaxPullback.flip_equiv.toAdjunction (OplaxPullback.to_from_comma_adj _ _ _ _)
 
   noncomputable def OplaxPullback.unleft' : A ⥤ OplaxPullback F G where
     obj x := {
@@ -300,10 +322,10 @@ namespace Lemma2
   noncomputable def Pr.unright_right_adj : Pl.unright' F G Fb Fadj ⊣ Pl.right' F G
     := Adjunction.comp (Comma.unfst_fst_adj _ _ _ _) OplaxPullback.CommaRight.equiv_comma.symm.toAdjunction
 
-  def Pl.unincl : OplaxPullback F G ⥤ FullSubcategory (Pl F G)
+  noncomputable def Pl.unincl : OplaxPullback F G ⥤ FullSubcategory (Pl F G)
     := OplaxPullback.to_comma F G Gb Gadj ⋙ OplaxPullback.CommaLeft.from_comma
 
-  def Pr.unincl : OplaxPullback F G ⥤ FullSubcategory (Pr F G)
+  noncomputable def Pr.unincl : OplaxPullback F G ⥤ FullSubcategory (Pr F G)
     := OplaxPullback.to_flipped_comma F G Fb Fadj ⋙ OplaxPullback.CommaRight.from_comma
 
   noncomputable def Pl.unincl_incl_adj : Pl.unincl F G Gb Gadj ⊣ fullSubcategoryInclusion (Pl F G)
@@ -322,15 +344,25 @@ namespace Lemma2
       )
       OplaxPullback.CommaRight.to_from_inclusion
 
-  def Pl.closed_seqColim [pf : PreservesColimitsOfShape J F] : ClosedUnderColimitsOfShape J (Pl F G) := sorry
-  def Pr.closed_seqColim [pg : PreservesColimitsOfShape J G] : ClosedUnderColimitsOfShape J (Pr F G) := sorry
-
   local instance Pl.closed_iso : IsClosedUnderIsomorphisms (Pl F G)
     := CategoryTheory.natIso_isClosedUnderIso (OplaxPullback.llm F G)
   local instance Pr.closed_iso : IsClosedUnderIsomorphisms (Pr F G)
     := CategoryTheory.natIso_isClosedUnderIso (OplaxPullback.rrm F G)
   local instance [hc : HasSeqColimits C] : HasSeqColimits (OplaxPullback F G)
     := OplaxPullback.hasColimitsOfShape
+
+  def Pl.closed_seqColim [pf : PreservesColimitsOfShape J F] : ClosedUnderColimitsOfShape J (Pl F G) := by
+    -- let _ := Pl.closed_iso F G
+    -- apply closedUnderColimitsOfShape_of_colimit
+    -- intro H h p
+    -- let pp := pf.preservesColimit (K := H ⋙ OplaxPullback.leftFunctor _ _).preserves (c := (OplaxPullback.leftFunctor F G).mapCocone (getColimitCocone H).cocone) sorry
+
+    intro H c isc p
+    let pp := pf.preservesColimit (K := H ⋙ OplaxPullback.leftFunctor _ _).preserves (c := (OplaxPullback.leftFunctor F G).mapCocone c) sorry
+
+    -- let test := ClosedUnderColimitsOfShape.essImage sorry
+    sorry
+  def Pr.closed_seqColim [pg : PreservesColimitsOfShape J G] : ClosedUnderColimitsOfShape J (Pr F G) := sorry
 
   noncomputable def Plr.unincl : OplaxPullback F G ⥤ FullSubcategory (Plr F G)
     := IntersectionReflective.reflector
@@ -358,12 +390,9 @@ namespace Lemma2
 
   noncomputable def Plr.unleft : A ⥤ FullSubcategory (Plr F G)
     := OplaxPullback.unleft' F G ⋙ Plr.unincl F G Fb Gb Fadj Gadj
-    -- := (Pl.unleft' F G Gb Gadj ⋙ fullSubcategoryInclusion (Pl F G)) ⋙ Plr.unincl F G Fb Gb Fadj Gadj
 
   noncomputable def Plr.unright : B ⥤ FullSubcategory (Plr F G)
     := OplaxPullback.unright' F G ⋙ Plr.unincl F G Fb Gb Fadj Gadj
-    -- := (Comma.unfst G F Fb Fadj ⋙ OplaxPullback.from_flipped_comma F G) ⋙ Plr.unincl F G Fb Gb Fadj Gadj
-    -- := (Pl.unright' F G Fb Fadj ⋙ fullSubcategoryInclusion (Pr F G)) ⋙ Plr.unincl F G Fb Gb Fadj Gadj
 
   noncomputable def proj_adj_left : Plr.unleft F G Fb Gb Fadj Gadj ⊣ Plr.left F G
     := Adjunction.comp (OplaxPullback.unleft'_left_adj _ _) (Plr.unincl_incl_adj _ _ _ _ _ _)

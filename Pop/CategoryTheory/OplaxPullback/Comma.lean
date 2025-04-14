@@ -20,6 +20,9 @@ def from_comma : Comma L R ⥤ OplaxPullback L R
 def from_flipped_comma : Comma R L ⥤ OplaxPullback L R
   := liftR (Comma.snd R L) (Comma.fst R L) (Comma.natTrans R L)
 
+def from_comma_flip         : from_comma         L R ⋙ OplaxPullback.flip = from_flipped_comma R L := rfl
+def from_flipped_comma_flip : from_flipped_comma L R ⋙ OplaxPullback.flip = from_comma         R L := rfl
+
 -- Partially-oplax pullback (on the left).
 -- `OplaxPullback`s where `homl` is an isomorphism.
 def CommaLeft : Set (OplaxPullback L R) := fun p => IsIso p.homl

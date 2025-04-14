@@ -1,6 +1,9 @@
 import Mathlib.CategoryTheory.Comma.Basic
 import Mathlib.CategoryTheory.Iso
 
+import Mathlib.CategoryTheory.Limits.Comma
+import Mathlib.CategoryTheory.Limits.FullSubcategory
+
 namespace CategoryTheory
 
 variable {A : Type _} [Category A]
