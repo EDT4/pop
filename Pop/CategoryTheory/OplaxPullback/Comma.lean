@@ -47,6 +47,30 @@ namespace CommaLeft
       right := f.right
     }
 
+  -- TODO: It should be reusable in to_from_inverse?
+  noncomputable def to_from_inclusion : OplaxPullback.CommaLeft.to_comma ⋙ OplaxPullback.from_comma L R ≅ fullSubcategoryInclusion (CommaLeft L R)
+    := NatIso.ofComponents
+      (fun o => {
+        hom := {
+          left := 𝟙 _
+          middle := inv o.obj.homl (I := o.property)
+          right := 𝟙 _
+          wr := by
+            dsimp [OplaxPullback.CommaLeft.to_comma,OplaxPullback.from_comma]
+            rw [Functor.map_id,Category.comp_id,IsIso.eq_inv_comp,← Category.assoc,IsIso.hom_inv_id,Category.id_comp]
+        }
+        inv := {
+          left := 𝟙 _
+          middle := o.obj.homl
+          right := 𝟙 _
+          wr := by
+            dsimp [OplaxPullback.CommaLeft.to_comma,OplaxPullback.from_comma]
+            rw [Functor.map_id,Category.comp_id,← Category.assoc,IsIso.hom_inv_id,Category.id_comp]
+        }
+
+      })
+      (fun f => by ext <;> simp [OplaxPullback.CommaLeft.to_comma,OplaxPullback.from_comma])
+
   -- TODO: Not really difficult proofs, but they are long due to the almost identical cases and I guess inv not being easy to simp? If naively automated, a timeout is reached.
   noncomputable def from_to_inverse : from_comma ⋙ to_comma ≅ 𝟭 (Comma L R) := NatIso.ofComponents
     (fun _ => {
@@ -194,6 +218,29 @@ namespace CommaRight
 
   noncomputable def to_comma : FullSubcategory (CommaRight L R) ⥤ Comma R L
     := comma_right_left L R ⋙ CommaLeft.to_comma
+
+  noncomputable def to_from_inclusion : to_comma ⋙ OplaxPullback.from_flipped_comma L R ≅ fullSubcategoryInclusion (CommaRight L R)
+    := NatIso.ofComponents
+      (fun o => {
+        hom := {
+          left := 𝟙 _
+          middle := inv o.obj.homr (I := o.property)
+          right := 𝟙 _
+          wl := by
+            dsimp [OplaxPullback.CommaLeft.to_comma,OplaxPullback.CommaRight.to_comma,comma_right_left]
+            rw [Functor.map_id,Category.comp_id,IsIso.eq_inv_comp,← Category.assoc,IsIso.hom_inv_id,Category.id_comp]
+        }
+        inv := {
+          left := 𝟙 _
+          middle := o.obj.homr
+          right := 𝟙 _
+          wl := by
+            dsimp [OplaxPullback.CommaLeft.to_comma,OplaxPullback.CommaRight.to_comma,comma_right_left]
+            rw [Functor.map_id,Category.comp_id,← Category.assoc,IsIso.hom_inv_id,Category.id_comp]
+        }
+
+      })
+      (fun f => by ext <;> simp [CommaRight.to_comma,CommaLeft.to_comma,OplaxPullback.from_comma,comma_right_left,flip])
 
   noncomputable def from_to_inverse : from_comma ⋙ to_comma ≅ 𝟭 (Comma R L)
     := CommaLeft.from_to_inverse

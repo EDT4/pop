@@ -7,6 +7,7 @@ variable {J : Type _}
 variable (I : Option J → Cat)
 variable (F : ∀j, I (some j) ⟶ I none)
 
+-- TODO: Whil this is a rewrite of OplaxPullback using a shape of `Option J` similar to WidePullback which can lessen duplicated proofs, the universes result in a less general definition. ULift exists though.
 structure OplaxWidePullback where
   obj : ∀j, (I j).α
   hom : ∀j, obj none ⟶ (F j).obj (obj (some j))
