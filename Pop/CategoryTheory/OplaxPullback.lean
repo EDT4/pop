@@ -205,6 +205,7 @@ def isoMk
 where
   hom := {
     left := l.hom
+    middle := m.hom
     right := r.hom
     wl := hl
     wr := hr
