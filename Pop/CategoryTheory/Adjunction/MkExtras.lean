@@ -43,6 +43,7 @@ namespace CategoryTheory.Adjunction.CoreEtaInvertibleHom
   noncomputable def mkBijective (bij : ∀{c₁}{c₂}, Function.Bijective (hom η (c₁ := c₁) (c₂ := c₂))) : L ⊣ R :=
     let e {c₁}{c₂} := Equiv.ofBijective (hom η (c₁ := c₁) (c₂ := c₂)) bij
     mk η e.invFun e.left_inv e.right_inv
+
 end CategoryTheory.Adjunction.CoreEtaInvertibleHom
 
 noncomputable def CategoryTheory.Adjunction.CoreFullyFaithfulEpiIsoRight.mk

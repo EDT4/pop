@@ -17,7 +17,6 @@ import Pop.CategoryTheory.OplaxPullback
 import Pop.CategoryTheory.OplaxPullback.Comma
 import Pop.NatCategoryExtras
 import Pop.NatExtras
-import Pop.Util
 
 -- set_option pp.proofs true
 
@@ -100,17 +99,6 @@ namespace IntersectionReflective
     let h : (n : ℕ) → F.obj n ⟶ c := Nat.rec (𝟙 c) fun n r => sorry ≫ r -- (by simp [F,sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r] ; sorry)
     let Eh : colimit F ⟶ c := colimit.desc F (.mk c $ NatTrans.ofSequence h sorry)
     convF ≫ Eh
-
-  noncomputable abbrev l'' : fullSubcategoryInclusion (A ∩ B : Set C) ⋙ M∞ A B adj_a adj_b ⟶ fullSubcategoryInclusion (A ∩ B : Set C) where
-    app c :=
-      let base := adj_a.counit.app ((FullSubcategory.map fun _ => And.left).obj c)
-      let F := (sequence A B adj_a adj_b).diagram.flip.obj c.obj
-      let f := (sequence A B adj_a adj_b).diagram.flip.map base
-      let conv : (M∞ A B adj_a adj_b).obj c.obj ⟶ colimit F := ((colimitIsoFlipCompColim (sequence A B adj_a adj_b).diagram).app c.obj).hom
-      let s n : F.obj n.succ ⟶ F.obj n := by simp [F,sequence,Seq.iterate2,Seq.Iterate2.obj,Nat.rec2r] ; sorry
-      let h : (n : ℕ) → F.obj n ⟶ c.obj := Nat.rec (𝟙 c.obj) fun n r => s n ≫ r
-      let Eh : colimit F ⟶ c.obj := colimit.desc F (.mk c.obj $ NatTrans.ofSequence h sorry)
-      conv ≫ Eh
 
   noncomputable def adjunction : reflector adj_a adj_b ca cb ⊣ fullSubcategoryInclusion (A ∩ B : Set C)
     := .mk
@@ -208,17 +196,18 @@ namespace Lemma2
       )
       (by simp [Function.LeftInverse,Function.RightInverse,Adjunction.CoreEtaInvertibleHom.hom])
 
+  @[simps!]
   noncomputable def OplaxPullback.to_comma : OplaxPullback F G ⥤ Comma F G where
     obj o := {
       left   := o.left
-      right  := pushout (X := Gb.obj o.middle) (Y := o.right) (Z := Gb.obj (F.obj o.left)) ((Gadj.homEquiv _ _).invFun o.homr) (Gb.map o.homl)
-      hom    := Gadj.unit.app (F.obj o.left) ≫ G.map (pushout.inr _ _)
+      right  := pushout (X := Gb.obj o.middle) (Y := Gb.obj (F.obj o.left)) (Z := o.right) (Gb.map o.homl) ((Gadj.homEquiv _ _).invFun o.homr)
+      hom    := Gadj.unit.app (F.obj o.left) ≫ G.map (pushout.inl _ _)
     }
     map f := {
       left := f.left
-      right := pushout.map _ _ _ _ (f.right) (Gb.map (F.map f.left)) (Gb.map f.middle)
-        (by rw [Equiv.invFun_as_coe,Adjunction.homEquiv_counit,Equiv.invFun_as_coe,Adjunction.homEquiv_counit,← Category.assoc,← Functor.map_comp,← OplaxPullback.Hom.wr,Functor.map_comp,Category.assoc,Category.assoc,Adjunction.counit_naturality])
+      right := pushout.map _ _ _ _ (Gb.map (F.map f.left)) (f.right) (Gb.map f.middle)
         (by rw [← Functor.map_comp,← Functor.map_comp,OplaxPullback.Hom.wl])
+        (by rw [Equiv.invFun_as_coe,Adjunction.homEquiv_counit,Equiv.invFun_as_coe,Adjunction.homEquiv_counit,← Category.assoc,← Functor.map_comp,← OplaxPullback.Hom.wr,Functor.map_comp,Category.assoc,Category.assoc,Adjunction.counit_naturality])
       w := by
         dsimp only [Adjunction.homEquiv]
         simp [← Functor.map_comp]
@@ -233,14 +222,71 @@ namespace Lemma2
       app o := {
         left := 𝟙 _
         middle := o.homl
-        right := pushout.inl _ _
+        right := pushout.inr _ _
+        wl := by
+          simp only [Functor.id_obj,CategoryTheory.Functor.map_id,Category.comp_id,Functor.comp_obj,OplaxPullback.from_comma_obj_homl,to_comma_obj_left]
+          exact (Category.comp_id _).symm
         wr := by
-          simp [to_comma,OplaxPullback.from_comma,Adjunction.homEquiv,(·≫·)]
-          aesop?
-          sorry
+          simp [Adjunction.homEquiv]
+          let cond := congr_arg (Gadj.unit.app o.middle ≫ ·) (congr_arg G.map (pushout.condition (f := Gb.map o.homl) (g := (Gadj.homEquiv _ _).invFun o.homr)))
+          simp [Adjunction.homEquiv] at cond
+          exact cond.symm
       }
     }
-    counit := sorry
+    counit := {
+      app o := {
+        left := 𝟙 _
+        right := pushout.desc
+          (Gb.map o.hom ≫ Gadj.counit.app o.right)
+          (𝟙 _)
+          (by simp [Adjunction.homEquiv])
+        w := by
+          let eq : Gb.map (𝟙 (F.obj o.left)) ≫ Gb.map o.hom ≫ Gadj.counit.app o.right = (Gb.map o.hom ≫ Gadj.counit.app o.right) ≫ 𝟙 o.right := by simp
+          simp [Adjunction.homEquiv] -- TODO: -Functor.map_comp ?
+          rw [← Functor.map_comp]
+          simp [pushout.inl_desc _ _ eq]
+      }
+      naturality x y f := by
+        ext
+        . simp [to_comma,OplaxPullback.from_comma]
+        . simp [to_comma,OplaxPullback.from_comma,(·≫·),Adjunction.homEquiv,f.w,pushout.map]
+          sorry -- TODO: pushout.desc and composition?
+    }
+    -- := Adjunction.CoreEtaInvertibleHom.mk
+    --   {app o := {
+    --     left := 𝟙 _
+    --     middle := o.homl
+    --     right := pushout.inr _ _
+    --     wl := by
+    --       simp only [Functor.id_obj,CategoryTheory.Functor.map_id,Category.comp_id,Functor.comp_obj,OplaxPullback.from_comma_obj_homl,to_comma_obj_left]
+    --       exact (Category.comp_id _).symm
+    --     wr := by
+    --       simp [Adjunction.homEquiv]
+    --       let cond := congr_arg (Gadj.unit.app o.middle ≫ ·) (congr_arg G.map (pushout.condition (f := Gb.map o.homl) (g := (Gadj.homEquiv _ _).invFun o.homr)))
+    --       simp [Adjunction.homEquiv] at cond
+    --       exact cond.symm
+    --     }}
+    --   (fun {x y} f => by
+    --     simp [to_comma,OplaxPullback.from_comma,(·≫·),OplaxPullback.liftL,OplaxPullback.lift,Comma.fst,Comma.snd,Comma.natTrans] at f
+    --     exact {
+    --       left := f.left
+    --       right := pushout.desc
+    --         (Gb.map (F.map f.left ≫ y.hom) ≫ Gadj.counit.app _)
+    --         f.right
+    --         (by
+    --           simp [to_comma,OplaxPullback.from_comma,(·≫·),Adjunction.homEquiv]
+    --           simp [← Functor.map_comp,← Category.assoc]
+    --           let test := f.wl
+    --           let test2 := f.wr
+    --           dsimp at test
+    --           dsimp at test2
+    --           sorry
+    --         )
+    --       w := sorry
+    --     }
+    --   )
+    --   sorry
+    --   sorry
 
   noncomputable def OplaxPullback.to_flipped_comma : OplaxPullback F G ⥤ Comma G F
     := OplaxPullback.flip ⋙ OplaxPullback.to_comma G F Fb Fadj
@@ -356,12 +402,18 @@ namespace Lemma2
     -- apply closedUnderColimitsOfShape_of_colimit
     -- intro H h p
     -- let pp := pf.preservesColimit (K := H ⋙ OplaxPullback.leftFunctor _ _).preserves (c := (OplaxPullback.leftFunctor F G).mapCocone (getColimitCocone H).cocone) sorry
+    -- sorry
 
     intro H c isc p
     let pp := pf.preservesColimit (K := H ⋙ OplaxPullback.leftFunctor _ _).preserves (c := (OplaxPullback.leftFunctor F G).mapCocone c) sorry
-
+    -- simp [Pl,OplaxPullback.CommaLeft]
     -- let test := ClosedUnderColimitsOfShape.essImage sorry
-    sorry
+    let t := c.ι.naturality
+    dsimp at t
+    dsimp [Pl,OplaxPullback.CommaLeft]
+    dsimp [Pl,OplaxPullback.CommaLeft] at p
+    exact IsClosedUnderIsomorphisms.of_iso (self := Pl.closed_iso F G) sorry (p sorry)
+
   def Pr.closed_seqColim [pg : PreservesColimitsOfShape J G] : ClosedUnderColimitsOfShape J (Pr F G) := sorry
 
   noncomputable def Plr.unincl : OplaxPullback F G ⥤ FullSubcategory (Plr F G)

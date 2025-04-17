@@ -230,5 +230,4 @@ section
           . simp only [NatTrans.comp_app,Category.comp_id,NatTrans.id_app,category_comp_left,category_id_left]
           . simp only [NatTrans.comp_app,Category.comp_id,NatTrans.id_app,category_comp_right,category_id_right]
       }
-
 end
