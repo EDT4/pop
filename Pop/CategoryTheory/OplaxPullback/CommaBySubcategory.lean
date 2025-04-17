@@ -255,21 +255,3 @@ namespace CommaRight
     := Equivalence.mk to_comma from_comma to_from_inverse.symm from_to_inverse
 
 end CommaRight
-
-@[simps!]
-def Comma.lift
-  (da : D ⥤ A)
-  (db : D ⥤ B)
-  (p : (da ⋙ L) ⟶ (db ⋙ R))
-  : D ⥤ Comma L R
-where
-  obj d := {
-    left   := da.obj d
-    right  := db.obj d
-    hom    := p.app d
-  }
-  map f := {
-    left  := da.map f
-    right := db.map f
-    w  := p.naturality _
-  }

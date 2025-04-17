@@ -11,10 +11,11 @@ import Mathlib.Order.Monotone.Basic
 import Mathlib.Order.Monotone.Defs
 import Pop.CategoryExtras
 import Pop.CategoryTheory.Adjunction.MkExtras
+import Pop.CategoryTheory.CommaExtras
 import Pop.CategoryTheory.Limits.OplaxPullback
 import Pop.CategoryTheory.Limits.Shapes.SeqColimit
 import Pop.CategoryTheory.OplaxPullback
-import Pop.CategoryTheory.OplaxPullback.Comma
+import Pop.CategoryTheory.OplaxPullback.CommaBySubcategory
 import Pop.NatCategoryExtras
 import Pop.NatExtras
 
@@ -172,7 +173,7 @@ namespace Lemma2
       (fun b => IsIso.id (G.obj b))
 
   def Comma.unfst : A ⥤ Comma F G
-    := OplaxPullback.Comma.lift F G
+    := Comma.lift F G
       (𝟭 A)
       (F ⋙ Gb)
       ((Functor.leftUnitor F).hom ≫ (Functor.rightUnitor F).inv ≫ whiskerLeft F Gadj.unit ≫ (Functor.associator F Gb G).inv)
@@ -184,15 +185,15 @@ namespace Lemma2
         {
           left := l
           right := (Gadj.homEquiv _ _).invFun (F.map l ≫ o.hom)
-          w := by simp [Comma.unfst,OplaxPullback.Comma.lift,Adjunction.homEquiv]
+          w := by simp [Comma.unfst,Comma.lift,Adjunction.homEquiv]
         }
       )
       (by
         intro a o f
-        simp [Function.LeftInverse,OplaxPullback.unleft,Adjunction.CoreEtaInvertibleHom.hom,OplaxPullback.FullSubcategory.leftFunctor,Pl.unleft]
+        simp [Function.LeftInverse,OplaxPullback.unleft,Adjunction.CoreEtaInvertibleHom.hom,OplaxPullback.FullSubcategory.leftFunctor]
         apply CommaMorphism.ext
         . simp
-        . simp [Comma.unfst,OplaxPullback.Comma.lift,Adjunction.homEquiv]
+        . simp [Comma.unfst,Comma.lift,Adjunction.homEquiv]
       )
       (by simp [Function.LeftInverse,Function.RightInverse,Adjunction.CoreEtaInvertibleHom.hom])
 
@@ -296,7 +297,7 @@ namespace Lemma2
       rw [← OplaxPullback.from_comma_flip]
       exact Adjunction.comp OplaxPullback.flip_equiv.toAdjunction (OplaxPullback.to_from_comma_adj _ _ _ _)
 
-  noncomputable def OplaxPullback.unleft' : A ⥤ OplaxPullback F G where
+  noncomputable def OplaxPullback.unleftFunctor : A ⥤ OplaxPullback F G where
     obj x := {
       left   := x
       middle := initial C
@@ -310,7 +311,7 @@ namespace Lemma2
       right  := 𝟙 _
     }
 
-  noncomputable def OplaxPullback.unright' : B ⥤ OplaxPullback F G where
+  noncomputable def OplaxPullback.unrightFunctor : B ⥤ OplaxPullback F G where
     obj x := {
       left   := initial A
       middle := initial C
@@ -324,8 +325,8 @@ namespace Lemma2
       right  := f
     }
 
-  noncomputable def OplaxPullback.unleft'_left_adj : OplaxPullback.unleft' F G ⊣ OplaxPullback.leftFunctor F G := by
-    dsimp only [unleft',OplaxPullback.leftFunctor]
+  noncomputable def OplaxPullback.unleft_left_functor_adj : OplaxPullback.unleftFunctor F G ⊣ OplaxPullback.leftFunctor F G := by
+    dsimp only [unleftFunctor,OplaxPullback.leftFunctor]
     exact {
       unit := 𝟙 _
       counit := {
@@ -337,8 +338,8 @@ namespace Lemma2
       }
     }
 
-  noncomputable def OplaxPullback.unright'_right_adj : OplaxPullback.unright' F G ⊣ OplaxPullback.rightFunctor F G := by
-    dsimp only [unright',OplaxPullback.rightFunctor]
+  noncomputable def OplaxPullback.unright_right_functor_adj : OplaxPullback.unrightFunctor F G ⊣ OplaxPullback.rightFunctor F G := by
+    dsimp only [unrightFunctor,OplaxPullback.rightFunctor]
     exact {
       unit := 𝟙 _
       counit := {
@@ -434,23 +435,17 @@ namespace Lemma2
       (cia := Pl.closed_iso F G)
       (cib := Pr.closed_iso F G)
 
-  abbrev Intersection.fstFunctor {A B : Set C} : FullSubcategory (A ∩ B : Set C) ⥤ FullSubcategory A
-    := FullSubcategory.map fun _ => And.left
-
-  abbrev Intersection.sndFunctor {A B : Set C} : FullSubcategory (A ∩ B : Set C) ⥤ FullSubcategory B
-    := FullSubcategory.map fun _ => And.right
-
   noncomputable def Plr.unleft : A ⥤ FullSubcategory (Plr F G)
-    := OplaxPullback.unleft' F G ⋙ Plr.unincl F G Fb Gb Fadj Gadj
+    := OplaxPullback.unleftFunctor F G ⋙ Plr.unincl F G Fb Gb Fadj Gadj
 
   noncomputable def Plr.unright : B ⥤ FullSubcategory (Plr F G)
-    := OplaxPullback.unright' F G ⋙ Plr.unincl F G Fb Gb Fadj Gadj
+    := OplaxPullback.unrightFunctor F G ⋙ Plr.unincl F G Fb Gb Fadj Gadj
 
-  noncomputable def proj_adj_left : Plr.unleft F G Fb Gb Fadj Gadj ⊣ Plr.left F G
-    := Adjunction.comp (OplaxPullback.unleft'_left_adj _ _) (Plr.unincl_incl_adj _ _ _ _ _ _)
+  noncomputable def Plr.unleft_left_adj : Plr.unleft F G Fb Gb Fadj Gadj ⊣ Plr.left F G
+    := Adjunction.comp (OplaxPullback.unleft_left_functor_adj _ _) (Plr.unincl_incl_adj _ _ _ _ _ _)
 
-  noncomputable def proj_adj_right : Plr.unright F G Fb Gb Fadj Gadj ⊣ Plr.right F G
-    := Adjunction.comp (OplaxPullback.unright'_right_adj _ _) (Plr.unincl_incl_adj _ _ _ _ _ _)
+  noncomputable def Plr.unright_right_adj : Plr.unright F G Fb Gb Fadj Gadj ⊣ Plr.right F G
+    := Adjunction.comp (OplaxPullback.unright_right_functor_adj _ _) (Plr.unincl_incl_adj _ _ _ _ _ _)
 
 end Lemma2
 
