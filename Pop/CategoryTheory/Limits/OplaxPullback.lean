@@ -17,21 +17,21 @@ variable (F : J ⥤ OplaxPullback L R)
 
 @[simps!]
 def coconePrecompose_llm
-  (c : Cocone (F ⋙ leftFunctor L R))
-  : Cocone (F ⋙ middleFunctor L R)
+  (c : Cocone (F ⋙ projLeft L R))
+  : Cocone (F ⋙ projMid L R)
   := (Cocones.precompose (whiskerLeft F (OplaxPullback.llm L R))).obj (L.mapCocone c)
 
 @[simps!]
 def coconePrecompose_rrm
-  (c : Cocone (F ⋙ rightFunctor L R))
-  : Cocone (F ⋙ middleFunctor L R)
+  (c : Cocone (F ⋙ projRight L R))
+  : Cocone (F ⋙ projMid L R)
   := (Cocones.precompose (whiskerLeft F (OplaxPullback.rrm L R))).obj (R.mapCocone c)
 
 @[simps]
 def cocone
-  (cl : Cocone (F ⋙ leftFunctor   L R))
-  {cm : Cocone (F ⋙ middleFunctor L R)} (tm : IsColimit cm)
-  (cr : Cocone (F ⋙ rightFunctor  L R))
+  (cl : Cocone (F ⋙ projLeft   L R))
+  {cm : Cocone (F ⋙ projMid L R)} (tm : IsColimit cm)
+  (cr : Cocone (F ⋙ projRight  L R))
   : Cocone F
   where
   pt := {
@@ -56,38 +56,38 @@ def cocone
 
 @[simps]
 def isColimit
-  {cl : Cocone (F ⋙ leftFunctor   L R)} (tl : IsColimit cl)
-  {cm : Cocone (F ⋙ middleFunctor L R)} (tm : IsColimit cm)
-  {cr : Cocone (F ⋙ rightFunctor  L R)} (tr : IsColimit cr)
+  {cl : Cocone (F ⋙ projLeft   L R)} (tl : IsColimit cl)
+  {cm : Cocone (F ⋙ projMid L R)} (tm : IsColimit cm)
+  {cr : Cocone (F ⋙ projRight  L R)} (tr : IsColimit cr)
   : IsColimit (cocone F cl tm cr)
   where
   desc s := {
-    left   := tl.desc ((leftFunctor   L R).mapCocone s)
-    middle := tm.desc ((middleFunctor L R).mapCocone s)
-    right  := tr.desc ((rightFunctor  L R).mapCocone s)
+    left   := tl.desc ((projLeft   L R).mapCocone s)
+    middle := tm.desc ((projMid L R).mapCocone s)
+    right  := tr.desc ((projRight  L R).mapCocone s)
     wl := tm.hom_ext fun j => by
       rewrite [
-        cocone_pt_homl,tm.fac_assoc,coconePrecompose_llm_ι_app,Category.assoc,← L.map_comp,tl.fac,(leftFunctor L R).mapCocone_ι_app,leftFunctor_map,
-        tm.fac_assoc,(middleFunctor L R).mapCocone_ι_app,middleFunctor_map
+        cocone_pt_homl,tm.fac_assoc,coconePrecompose_llm_ι_app,Category.assoc,← L.map_comp,tl.fac,(projLeft L R).mapCocone_ι_app,projLeft_map,
+        tm.fac_assoc,(projMid L R).mapCocone_ι_app,projMid_map
       ]
       exact (s.ι.app j).wl
     wr := tm.hom_ext fun j => by
       rewrite [
-        cocone_pt_homr,tm.fac_assoc,coconePrecompose_rrm_ι_app,Category.assoc,← R.map_comp,tr.fac,(rightFunctor L R).mapCocone_ι_app,rightFunctor_map,
-        tm.fac_assoc,(middleFunctor L R).mapCocone_ι_app,middleFunctor_map
+        cocone_pt_homr,tm.fac_assoc,coconePrecompose_rrm_ι_app,Category.assoc,← R.map_comp,tr.fac,(projRight L R).mapCocone_ι_app,projRight_map,
+        tm.fac_assoc,(projMid L R).mapCocone_ι_app,projMid_map
       ]
       exact (s.ι.app j).wr
   }
   uniq s m w := by
     ext
-    . exact tl.uniq ((leftFunctor   L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.left   (w j))
-    . exact tm.uniq ((middleFunctor L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.middle (w j))
-    . exact tr.uniq ((rightFunctor  L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.right  (w j))
+    . exact tl.uniq ((projLeft   L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.left   (w j))
+    . exact tm.uniq ((projMid L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.middle (w j))
+    . exact tr.uniq ((projRight  L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.right  (w j))
 
 instance hasColimit
-  [hl : HasColimit (F ⋙ leftFunctor   L R)]
-  [hm : HasColimit (F ⋙ middleFunctor L R)]
-  [hr : HasColimit (F ⋙ rightFunctor  L R)]
+  [hl : HasColimit (F ⋙ projLeft   L R)]
+  [hm : HasColimit (F ⋙ projMid L R)]
+  [hr : HasColimit (F ⋙ projRight  L R)]
   : HasColimit F
   := HasColimit.mk ⟨_,isColimit _ (colimit.isColimit _) (colimit.isColimit _) (colimit.isColimit _)⟩
 

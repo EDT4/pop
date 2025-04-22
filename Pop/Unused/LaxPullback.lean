@@ -56,24 +56,24 @@ section
   variable (L) (R)
 
   @[simps]
-  def leftFunctor : LaxPullback L R ⥤ A where
+  def projLeft : LaxPullback L R ⥤ A where
     obj X := X.left
     map f := f.left
 
   @[simps]
-  def rightFunctor : LaxPullback L R ⥤ B where
+  def projRight : LaxPullback L R ⥤ B where
     obj X := X.right
     map f := f.right
 
   @[simps]
-  def middleFunctor : LaxPullback L R ⥤ C where
+  def projMid : LaxPullback L R ⥤ C where
     obj X := X.middle
     map f := f.middle
 
-  def llm : NatTrans (leftFunctor L R ⋙ L) (middleFunctor L R) where
+  def llm : NatTrans (projLeft L R ⋙ L) (projMid L R) where
     app := homl
 
-  def rrm : NatTrans (rightFunctor L R ⋙ R) (middleFunctor L R) where
+  def rrm : NatTrans (projRight L R ⋙ R) (projMid L R) where
     app := homr
 end
 
@@ -81,7 +81,7 @@ section
   variable {P₁ P₂ : LaxPullback L R}
   variable (f : P₁ ⟶ P₂)
 
-  instance [IsIso f] : IsIso f.left   := (leftFunctor   L R).map_isIso f
-  instance [IsIso f] : IsIso f.right  := (rightFunctor  L R).map_isIso f
-  instance [IsIso f] : IsIso f.middle := (middleFunctor L R).map_isIso f
+  instance [IsIso f] : IsIso f.left   := (projLeft   L R).map_isIso f
+  instance [IsIso f] : IsIso f.right  := (projRight  L R).map_isIso f
+  instance [IsIso f] : IsIso f.middle := (projMid L R).map_isIso f
 end

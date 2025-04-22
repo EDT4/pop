@@ -1,4 +1,5 @@
 import Mathlib.CategoryTheory.Comma.Basic
+import Pop.CategoryTheory.CommaExtras
 import Pop.CategoryTheory.OplaxPullback
 
 namespace CategoryTheory.OplaxPullback
@@ -30,7 +31,13 @@ def CommaLeft : Set (OplaxPullback L R) := fun p => IsIso p.homl
 namespace CommaLeft
   variable {L R}
 
-  noncomputable def natInv {S} (p : S ⊆ CommaLeft L R) : fullSubcategoryInclusion S ⋙ leftFunctor L R ⋙ L ⟶ fullSubcategoryInclusion S ⋙ middleFunctor L R where
+  abbrev projLeft : FullSubcategory (CommaLeft L R) ⥤ A
+    := fullSubcategoryInclusion _ ⋙ OplaxPullback.projLeft _ _
+
+  abbrev projRight : FullSubcategory (CommaLeft L R) ⥤ B
+    := fullSubcategoryInclusion _ ⋙ OplaxPullback.projRight _ _
+
+  noncomputable def natInv {S} (p : S ⊆ CommaLeft L R) : fullSubcategoryInclusion S ⋙ OplaxPullback.projLeft L R ⋙ L ⟶ fullSubcategoryInclusion S ⋙ projMid L R where
     app o := inv _ (I := p (o.property))
 
   def from_comma : Comma L R ⥤ FullSubcategory (CommaLeft L R)
@@ -39,18 +46,10 @@ namespace CommaLeft
       (OplaxPullback.from_comma L R)
       (by simp [OplaxPullback.from_comma,CommaLeft] ; infer_instance)
 
-  noncomputable def to_comma : FullSubcategory (CommaLeft L R) ⥤ Comma L R where
-    obj p := {
-      left := p.obj.left
-      right := p.obj.right
-      hom := inv _ (I := p.property) ≫ p.obj.homr
-    }
-    map f := {
-      left := f.left
-      right := f.right
-    }
+  noncomputable def to_comma : FullSubcategory (CommaLeft L R) ⥤ Comma L R
+    := Comma.lift projLeft projRight {app p := inv _ (I := p.property) ≫ p.obj.homr}
 
-  -- TODO: It should be reusable in to_from_inverse?
+  -- TODO: By to_from_inverse?
   noncomputable def to_from_inclusion : OplaxPullback.CommaLeft.to_comma ⋙ OplaxPullback.from_comma L R ≅ fullSubcategoryInclusion (CommaLeft L R)
     := NatIso.ofComponents
       (fun o => {
@@ -213,7 +212,13 @@ def comma_right_left_left_right : comma_right_left L R ⋙ comma_left_right R L 
 namespace CommaRight
   variable {L R}
 
-  noncomputable def natInv {S} (p : S ⊆ CommaRight L R) : fullSubcategoryInclusion S ⋙ rightFunctor L R ⋙ R ⟶ fullSubcategoryInclusion S ⋙ middleFunctor L R where
+  abbrev projLeft : FullSubcategory (CommaLeft L R) ⥤ A
+    := fullSubcategoryInclusion _ ⋙ OplaxPullback.projLeft _ _
+
+  abbrev projRight : FullSubcategory (CommaLeft L R) ⥤ B
+    := fullSubcategoryInclusion _ ⋙ OplaxPullback.projRight _ _
+
+  noncomputable def natInv {S} (p : S ⊆ CommaRight L R) : fullSubcategoryInclusion S ⋙ OplaxPullback.projRight L R ⋙ R ⟶ fullSubcategoryInclusion S ⋙ projMid L R where
     app o := inv _ (I := p (o.property))
 
   def from_comma : Comma R L ⥤ FullSubcategory (CommaRight L R)

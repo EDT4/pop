@@ -13,6 +13,7 @@ variable {D : Type _} [Category D]
 variable (L : A ⥤ C)
 variable (R : B ⥤ C)
 
+-- Also called: Pullback.
 structure IsoComma where
   left  : A
   right : B
@@ -52,17 +53,17 @@ namespace IsoComma
     variable (L) (R)
 
     @[simps]
-    def leftFunctor : IsoComma L R ⥤ A where
+    def projLeft : IsoComma L R ⥤ A where
       obj x := x.left
       map f := f.left
 
     @[simps]
-    def rightFunctor : IsoComma L R ⥤ B where
+    def projRight : IsoComma L R ⥤ B where
       obj x := x.right
       map f := f.right
 
     @[simps!]
-    def natIso : (leftFunctor L R ⋙ L) ≅ (rightFunctor L R ⋙ R) where
+    def natIso : (projLeft L R ⋙ L) ≅ (projRight L R ⋙ R) where
       hom := {app o := o.iso.hom}
       inv := {app o := o.iso.inv}
   end
@@ -136,11 +137,11 @@ namespace IsoComma
     variable (i : x ≅ y)
     variable (h : x ⟶ y)
 
-    instance [IsIso h] : IsIso h.left  := (leftFunctor  L R).map_isIso h
-    instance [IsIso h] : IsIso h.right := (rightFunctor L R).map_isIso h
+    instance [IsIso h] : IsIso h.left  := (projLeft  L R).map_isIso h
+    instance [IsIso h] : IsIso h.right := (projRight L R).map_isIso h
 
-    @[simps!] def leftIso  : x.left  ≅ y.left  := (leftFunctor  L R).mapIso i
-    @[simps!] def rightIso : x.right ≅ y.right := (rightFunctor L R).mapIso i
+    @[simps!] def leftIso  : x.left  ≅ y.left  := (projLeft  L R).mapIso i
+    @[simps!] def rightIso : x.right ≅ y.right := (projRight L R).mapIso i
 
     @[simp]
     lemma inv_left [IsIso h] : (inv h).left = inv h.left := by

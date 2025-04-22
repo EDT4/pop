@@ -67,26 +67,26 @@ section
   variable (L) (R)
 
   @[simps]
-  def leftFunctor : OplaxPullback L R ⥤ A where
+  def projLeft : OplaxPullback L R ⥤ A where
     obj x := x.left
     map f := f.left
 
   @[simps]
-  def middleFunctor : OplaxPullback L R ⥤ C where
+  def projMid : OplaxPullback L R ⥤ C where
     obj x := x.middle
     map f := f.middle
 
   @[simps]
-  def rightFunctor : OplaxPullback L R ⥤ B where
+  def projRight : OplaxPullback L R ⥤ B where
     obj x := x.right
     map f := f.right
 
   @[simps]
-  def llm : NatTrans (middleFunctor L R) (leftFunctor L R ⋙ L) where
+  def llm : NatTrans (projMid L R) (projLeft L R ⋙ L) where
     app := homl
 
   @[simps]
-  def rrm : NatTrans (middleFunctor L R) (rightFunctor L R ⋙ R) where
+  def rrm : NatTrans (projMid L R) (projRight L R ⋙ R) where
     app := homr
 end
 
@@ -118,7 +118,7 @@ abbrev liftL (da : D ⥤ A) (db : D ⥤ B) (p : NatTrans (da ⋙ L) (db ⋙ R)) 
 abbrev liftR (da : D ⥤ A) (db : D ⥤ B) (p : NatTrans (db ⋙ R) (da ⋙ L)) : D ⥤ OplaxPullback L R
   := lift da db (db ⋙ R) p (NatTrans.id _)
 
--- Alternative definition: lift (rightFunctor _ _) (leftFunctor _ _) (middleFunctor _ _) (rrm _ _) (llm _ _)
+-- Alternative definition: lift (projRight _ _) (projLeft _ _) (projMid _ _) (rrm _ _) (llm _ _)
 @[simps]
 def flip : OplaxPullback L R ⥤ OplaxPullback R L where
   obj o := {
@@ -138,9 +138,9 @@ section
   variable {P₁ P₂ : OplaxPullback L R}
   variable (f : P₁ ⟶ P₂)
 
-  instance [IsIso f] : IsIso f.left   := (leftFunctor   L R).map_isIso f
-  instance [IsIso f] : IsIso f.middle := (middleFunctor L R).map_isIso f
-  instance [IsIso f] : IsIso f.right  := (rightFunctor  L R).map_isIso f
+  instance [IsIso f] : IsIso f.left   := (projLeft   L R).map_isIso f
+  instance [IsIso f] : IsIso f.middle := (projMid L R).map_isIso f
+  instance [IsIso f] : IsIso f.right  := (projRight  L R).map_isIso f
 end
 
 variable {x y z: OplaxPullback L R}
@@ -159,9 +159,9 @@ lemma hom_ext
 
 -- The fields preserve isomorphisms.
 section
-  @[simps!] def leftIso   : x.left   ≅ y.left   := (leftFunctor   L R).mapIso i
-  @[simps!] def middleIso : x.middle ≅ y.middle := (middleFunctor L R).mapIso i
-  @[simps!] def rightIso  : x.right  ≅ y.right  := (rightFunctor  L R).mapIso i
+  @[simps!] def leftIso   : x.left   ≅ y.left   := (projLeft   L R).mapIso i
+  @[simps!] def middleIso : x.middle ≅ y.middle := (projMid L R).mapIso i
+  @[simps!] def rightIso  : x.right  ≅ y.right  := (projRight  L R).mapIso i
 end
 
 def flip_obj_invol {x : OplaxPullback L R} : flip.obj (flip.obj x) = x := rfl

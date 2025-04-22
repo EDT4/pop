@@ -8,23 +8,98 @@ variable {A : Type _} [Category A]
 variable {B : Type _} [Category B]
 variable {C : Type _} [Category C]
 variable {D : Type _} [Category D]
-variable (L : A ⥤ C)
-variable (R : B ⥤ C)
+variable {L : A ⥤ C}
+variable {R : B ⥤ C}
+variable {da : D ⥤ A}
+variable {db : D ⥤ B}
+variable {dp : (da ⋙ L) ⟶ (db ⋙ R)}
+variable {F G : D ⥤ Comma L R}
 
 @[simps!]
 def lift
   (da : D ⥤ A)
   (db : D ⥤ B)
-  (p : (da ⋙ L) ⟶ (db ⋙ R))
+  (dp : (da ⋙ L) ⟶ (db ⋙ R))
   : D ⥤ Comma L R
 where
   obj d := {
     left   := da.obj d
     right  := db.obj d
-    hom    := p.app d
+    hom    := dp.app d
   }
   map f := {
     left  := da.map f
     right := db.map f
-    w  := p.naturality _
+    w  := dp.naturality _
   }
+
+@[simp] def lift_fst : lift da db dp ⋙ fst L R = da := by rfl;
+@[simp] def lift_snd : lift da db dp ⋙ snd L R = db := by rfl;
+@[simp] def lift_fst_snd : lift (fst L R) (snd L R) (natTrans L R) = 𝟭 _ := by rfl;
+
+@[simps!]
+def liftTrans
+  (ta : F ⋙ fst L R ⟶ G ⋙ fst L R)
+  (tb : F ⋙ snd L R ⟶ G ⋙ snd L R)
+  (w : ∀{d}, L.map (ta.app d) ≫ (G.obj d).hom = (F.obj d).hom ≫ R.map (tb.app d))
+  : F ⟶ G where
+  app d := {
+    left  := ta.app d
+    right := tb.app d
+    w := w
+  }
+  naturality x y f := by
+    ext
+    . exact ta.naturality f
+    . exact tb.naturality f
+
+def liftTrans'
+  (ta : F ⋙ fst L R ⟶ G ⋙ fst L R)
+  (tb : F ⋙ snd L R ⟶ G ⋙ snd L R)
+  (h : whiskerRight ta L ≫ whiskerLeft G (Comma.natTrans _ _) = whiskerLeft F (Comma.natTrans _ _) ≫ whiskerRight tb R)
+  : F ⟶ G := liftTrans ta tb $ by
+    intro d
+    let p := congrArg (fun f => f.app d) h
+    simp only [NatTrans.comp_app,Functor.associator_hom_app, Functor.associator_inv_app,Category.comp_id, Category.id_comp] at p
+    exact p
+
+def lift_ext
+  (α β : F ⟶ G)
+  (hfst : whiskerRight α (fst L R) = whiskerRight β (fst L R))
+  (hsnd : whiskerRight α (snd L R) = whiskerRight β (snd L R))
+  : α = β := by
+    ext d
+    · let p := congrArg (fun f => f.app d) hfst ; simp at p ; exact p
+    · let p := congrArg (fun f => f.app d) hsnd ; simp at p ; exact p
+
+def liftIso
+  (ta : F ⋙ fst L R ≅ G ⋙ fst L R)
+  (tb : F ⋙ snd L R ≅ G ⋙ snd L R)
+  (hl : ∀{d}, L.map (ta.inv.app d) ≫ (F.obj d).hom = (G.obj d).hom ≫ R.map (tb.inv.app d))
+  (hr : ∀{d}, L.map (ta.hom.app d) ≫ (G.obj d).hom = (F.obj d).hom ≫ R.map (tb.hom.app d))
+  : F ≅ G where
+  hom := liftTrans ta.hom tb.hom hr
+  inv := liftTrans ta.inv tb.inv hl
+  hom_inv_id := by apply lift_ext <;> simp [liftTrans',liftTrans,whiskerRight]
+  inv_hom_id := by apply lift_ext <;> simp [liftTrans',liftTrans,whiskerRight]
+
+def liftIso'
+  (ta : F ⋙ fst L R ≅ G ⋙ fst L R)
+  (tb : F ⋙ snd L R ≅ G ⋙ snd L R)
+  (hl : whiskerRight ta.inv L ≫ whiskerLeft F (Comma.natTrans _ _) = whiskerLeft G (Comma.natTrans _ _) ≫ whiskerRight tb.inv R)
+  (hr : whiskerRight ta.hom L ≫ whiskerLeft G (Comma.natTrans _ _) = whiskerLeft F (Comma.natTrans _ _) ≫ whiskerRight tb.hom R)
+  : F ≅ G
+  := liftIso ta tb
+    (by intro d ; let p := congrArg (fun f => f.app d) hl ; simp at p ; exact p)
+    (by intro d ; let p := congrArg (fun f => f.app d) hr ; simp at p ; exact p)
+
+-- def lift_unique
+--   (F : D ⥤ Comma L R)
+--   (ffst : F ⋙ fst L R ≅ da)
+--   (fsnd : F ⋙ snd L R ≅ db)
+--   : F ≅ lift da db dp
+--   := liftIso'
+--     (by simp only [lift_fst] ; exact ffst)
+--     (by simp only [lift_snd] ; exact fsnd)
+--     sorry
+--     sorry

@@ -168,7 +168,7 @@ namespace Seq
 
   section
     variable {C : Type _}
-    variable [Bicategory C]
+    variable [Bicategory C] -- TODO: Look into monoidal category instead
     variable {c : C}
 
     namespace Iterate2

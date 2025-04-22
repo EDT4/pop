@@ -13,12 +13,7 @@ variable {C₂ : Type _} [Category C₂]
 variable {F G : Functor C₁ C₂}
 
 def natIso_isClosedUnderIso (t : NatTrans F G) : IsClosedUnderIsomorphisms (fun x => IsIso (t.app x)) where
-  of_iso e i := by
-    obtain ⟨f,⟨l,r⟩⟩ := i
-    iterate 3 constructor
-    . rw [← Category.assoc,← t.naturality e.inv,Category.assoc,← Category.assoc (t.app _),l,Category.id_comp,← Functor.map_comp,e.inv_hom_id,Functor.map_id]
-    . rw [Category.assoc,Category.assoc,t.naturality e.hom,← Category.assoc f,r,Category.id_comp,← Functor.map_comp,e.inv_hom_id,Functor.map_id]
-    -- Explicit inverse to (t.app Y): G.map e.inv ≫ f ≫ F.map e.hom
+  of_iso e _ := IsIso.of_isIso_fac_left (t.naturality e.hom)
 
 theorem comp_inv_eq_inv_comp
   {x y : C} (f₁ g₁ : x ⟶ y) [i₁ : IsIso g₁]  {f₂ g₂ : y ⟶ x} [i₂ : IsIso g₂]

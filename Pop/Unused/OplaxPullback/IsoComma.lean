@@ -24,8 +24,8 @@ namespace CommaLeftRight
 
   noncomputable def to_isoComma : FullSubcategory (CommaLeftRight L R) ⥤ IsoComma L R
     := IsoComma.lift
-      (fullSubcategoryInclusion _ ⋙ OplaxPullback.leftFunctor _ _)
-      (fullSubcategoryInclusion _ ⋙ OplaxPullback.rightFunctor _ _)
+      (fullSubcategoryInclusion _ ⋙ OplaxPullback.projLeft _ _)
+      (fullSubcategoryInclusion _ ⋙ OplaxPullback.projRight _ _)
       {
         hom := (Functor.associator _ _ _).hom ≫ OplaxPullback.CommaLeft.natInv                    (fun _ => And.left)  ≫ whiskerLeft (fullSubcategoryInclusion (CommaLeftRight L R)) (OplaxPullback.rrm L R) ≫ (Functor.associator _ _ _).inv
         inv := (Functor.associator _ _ _).hom ≫ OplaxPullback.CommaRight.natInv (L := L) (R := R) (fun _ => And.right) ≫ whiskerLeft (fullSubcategoryInclusion (CommaLeftRight L R)) (OplaxPullback.llm L R) ≫ (Functor.associator _ _ _).inv
