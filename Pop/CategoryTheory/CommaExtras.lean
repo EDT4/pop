@@ -41,27 +41,17 @@ where
 def liftTrans
   (ta : F ⋙ fst L R ⟶ G ⋙ fst L R)
   (tb : F ⋙ snd L R ⟶ G ⋙ snd L R)
-  (w : ∀{d}, L.map (ta.app d) ≫ (G.obj d).hom = (F.obj d).hom ≫ R.map (tb.app d))
+  (h : whiskerRight ta L ≫ whiskerLeft G (Comma.natTrans _ _) = whiskerLeft F (Comma.natTrans _ _) ≫ whiskerRight tb R)
   : F ⟶ G where
   app d := {
     left  := ta.app d
     right := tb.app d
-    w := w
+    w := congrArg (fun f => f.app d) h
   }
   naturality x y f := by
     ext
     . exact ta.naturality f
     . exact tb.naturality f
-
-def liftTrans'
-  (ta : F ⋙ fst L R ⟶ G ⋙ fst L R)
-  (tb : F ⋙ snd L R ⟶ G ⋙ snd L R)
-  (h : whiskerRight ta L ≫ whiskerLeft G (Comma.natTrans _ _) = whiskerLeft F (Comma.natTrans _ _) ≫ whiskerRight tb R)
-  : F ⟶ G := liftTrans ta tb $ by
-    intro d
-    let p := congrArg (fun f => f.app d) h
-    simp only [NatTrans.comp_app,Functor.associator_hom_app, Functor.associator_inv_app,Category.comp_id, Category.id_comp] at p
-    exact p
 
 def lift_ext
   (α β : F ⟶ G)
@@ -72,26 +62,17 @@ def lift_ext
     · let p := congrArg (fun f => f.app d) hfst ; simp at p ; exact p
     · let p := congrArg (fun f => f.app d) hsnd ; simp at p ; exact p
 
+@[simps!]
 def liftIso
-  (ta : F ⋙ fst L R ≅ G ⋙ fst L R)
-  (tb : F ⋙ snd L R ≅ G ⋙ snd L R)
-  (hl : ∀{d}, L.map (ta.inv.app d) ≫ (F.obj d).hom = (G.obj d).hom ≫ R.map (tb.inv.app d))
-  (hr : ∀{d}, L.map (ta.hom.app d) ≫ (G.obj d).hom = (F.obj d).hom ≫ R.map (tb.hom.app d))
-  : F ≅ G where
-  hom := liftTrans ta.hom tb.hom hr
-  inv := liftTrans ta.inv tb.inv hl
-  hom_inv_id := by apply lift_ext <;> simp [liftTrans',liftTrans,whiskerRight]
-  inv_hom_id := by apply lift_ext <;> simp [liftTrans',liftTrans,whiskerRight]
-
-def liftIso'
   (ta : F ⋙ fst L R ≅ G ⋙ fst L R)
   (tb : F ⋙ snd L R ≅ G ⋙ snd L R)
   (hl : whiskerRight ta.inv L ≫ whiskerLeft F (Comma.natTrans _ _) = whiskerLeft G (Comma.natTrans _ _) ≫ whiskerRight tb.inv R)
   (hr : whiskerRight ta.hom L ≫ whiskerLeft G (Comma.natTrans _ _) = whiskerLeft F (Comma.natTrans _ _) ≫ whiskerRight tb.hom R)
-  : F ≅ G
-  := liftIso ta tb
-    (by intro d ; let p := congrArg (fun f => f.app d) hl ; simp at p ; exact p)
-    (by intro d ; let p := congrArg (fun f => f.app d) hr ; simp at p ; exact p)
+  : F ≅ G where
+  hom := liftTrans ta.hom tb.hom hr
+  inv := liftTrans ta.inv tb.inv hl
+  hom_inv_id := by apply lift_ext <;> simp [liftTrans,liftTrans,whiskerRight]
+  inv_hom_id := by apply lift_ext <;> simp [liftTrans,liftTrans,whiskerRight]
 
 -- def lift_unique
 --   (F : D ⥤ Comma L R)

@@ -1,3 +1,4 @@
+import Mathlib.CategoryTheory.Adjunction.Whiskering
 import Mathlib.CategoryTheory.Category.Cat
 import Mathlib.CategoryTheory.Limits.FullSubcategory
 import Mathlib.CategoryTheory.Limits.FunctorCategory.Basic
@@ -182,7 +183,7 @@ namespace Lemma2
       (by simp [Function.LeftInverse,Function.RightInverse,Adjunction.CoreEtaInvertibleHom.hom])
 
   @[simps!]
-  noncomputable def OplaxPullback.to_comma : OplaxPullback F G ⥤ Comma F G where
+  noncomputable def OplaxPullback.to_comma' : OplaxPullback F G ⥤ Comma F G where
     obj o := {
       left   := o.left
       right  := pushout (X := Gb.obj o.middle) (Y := Gb.obj (F.obj o.left)) (Z := o.right) (Gb.map o.homl) ((Gadj.homEquiv _ _).invFun o.homr)
@@ -202,68 +203,72 @@ namespace Lemma2
       dsimp [Adjunction.homEquiv]
       ext <;> simp
 
-  -- TODO: Maybe "lift" the adjunction to the category of (A ⥤ ·) instead?
-  -- So instead of (Gb ⊣ G) where Gb : C ⥤ B , G: B ⥤ C, something like:
-  -- ((A ⥤ C) ⥤ (A ⥤ B)) and ((A ⥤ B) ⥤ (A ⥤ C)) stating that these are also adjoint?
-  def test {X : A ⥤ C} {Y : A ⥤ B}
-    (adj : Gb ⊣ G) (f : X ⟶ Y ⋙ G)
-    : X ⋙ Gb ⟶ Y
-    where
-    app a := (Adjunction.homEquiv adj _ _).invFun (f.app a)
-    naturality :=
-      -- let test := Over.post (T := Cat) (D := sorry) (X := Cat.of A) G
-      sorry
-
-  noncomputable def OplaxPullback.to_comma' : OplaxPullback F G ⥤ Comma F G
-    := Comma.lift
-      (OplaxPullback.projLeft _ _)
+  @[simps!]
+  noncomputable def OplaxPullback.to_comma : OplaxPullback F G ⥤ Comma F G :=
+    let pl := (whiskerRight (OplaxPullback.llm _ _) Gb) -- Gb.map o.homl
+    let pr := ((Adjunction.homEquiv (Adjunction.whiskerRight _ Gadj) _ _).invFun (OplaxPullback.rrm _ _)) -- (Gadj.homEquiv _ _).invFun o.homr
+    Comma.lift
+      (OplaxPullback.projLeft _ _) -- o.left
       (pushout
-        (X := OplaxPullback.projMid _ _ ⋙ Gb)
-        (Y := OplaxPullback.projLeft _ _ ⋙ F ⋙ Gb)
-        (Z := OplaxPullback.projRight _ _)
-        (whiskerRight (OplaxPullback.llm _ _) Gb)
-        (test G Gb Gadj (OplaxPullback.rrm _ _))
+        (X := OplaxPullback.projMid _ _ ⋙ Gb) -- Gb.obj o.middle
+        (Y := OplaxPullback.projLeft _ _ ⋙ F ⋙ Gb) -- Gb.obj (F.obj o.left)
+        (Z := OplaxPullback.projRight _ _) -- o.right
+        pl pr
       )
-      ( (Functor.rightUnitor _ ).inv
-      ≫ whiskerLeft (OplaxPullback.projLeft F G ⋙ F) Gadj.unit
-      ≫ sorry -- whiskerRight sorry G
+      ( -- Gadj.unit.app (F.obj o.left) ≫ G.map (pushout.inl _ _)
+        (Functor.rightUnitor _ ).inv
+        ≫ whiskerLeft (OplaxPullback.projLeft F G ⋙ F) Gadj.unit
+        ≫ (whiskerRight (pushout.inl pl pr) G)
       )
+
+  -- @[reassoc (attr := simp)] -- TODO: Cannot reassoc functors?
+  def OplaxPullback.to_comma_fst : to_comma F G Gb Gadj ⋙ Comma.fst F G = OplaxPullback.projLeft F G
+    := Comma.lift_fst
+
+  -- TODO: Separate the stuff in to_comma, then prove to_from_comma_adj using that. See how to_comma_fst is used for example
+  def OplaxPullback.to_comma_snd : to_comma F G Gb Gadj ⋙ Comma.snd F G = OplaxPullback.projRight F G
+    := Comma.lift_snd
 
   noncomputable def OplaxPullback.to_from_comma_adj : OplaxPullback.to_comma F G Gb Gadj ⊣ OplaxPullback.from_comma F G where
-    unit := {
-      app o := {
-        left := 𝟙 _
-        middle := o.homl
-        right := pushout.inr _ _
-        wl := by
-          simp only [Functor.id_obj,CategoryTheory.Functor.map_id,Category.comp_id,Functor.comp_obj,OplaxPullback.from_comma_obj_homl,to_comma_obj_left]
-          exact (Category.comp_id _).symm
-        wr := by
-          simp [Adjunction.homEquiv]
-          let cond := congr_arg (Gadj.unit.app o.middle ≫ ·) (congr_arg G.map (pushout.condition (f := Gb.map o.homl) (g := (Gadj.homEquiv _ _).invFun o.homr)))
-          simp [Adjunction.homEquiv] at cond
-          exact cond.symm
-      }
-    }
-    counit := {
-      app o := {
-        left := 𝟙 _
-        right := pushout.desc
-          (Gb.map o.hom ≫ Gadj.counit.app o.right)
-          (𝟙 _)
-          (by simp [Adjunction.homEquiv])
-        w := by
-          let eq : Gb.map (𝟙 (F.obj o.left)) ≫ Gb.map o.hom ≫ Gadj.counit.app o.right = (Gb.map o.hom ≫ Gadj.counit.app o.right) ≫ 𝟙 o.right := by simp
-          simp [Adjunction.homEquiv] -- TODO: -Functor.map_comp ?
-          rw [← Functor.map_comp]
-          simp [pushout.inl_desc _ _ eq]
-      }
-      naturality x y f := by
-        ext
-        . simp [to_comma,OplaxPullback.from_comma]
-        . simp [to_comma,OplaxPullback.from_comma,(·≫·),Adjunction.homEquiv,f.w,pushout.map]
-          sorry -- TODO: pushout.desc and composition?
-    }
+    unit := sorry
+    counit := Comma.liftTrans
+      (by rw [Functor.assoc,OplaxPullback.to_comma_fst,OplaxPullback.from_comma_projLeft] ; exact (Functor.leftUnitor _).inv)
+      (by rw [Functor.assoc,OplaxPullback.to_comma_snd] ; sorry)
+      sorry
+    -- unit := {
+    --   app o := {
+    --     left := 𝟙 _
+    --     middle := o.homl
+    --     right := pushout.inr _ _
+    --     wl := by
+    --       simp only [Functor.id_obj,CategoryTheory.Functor.map_id,Category.comp_id,Functor.comp_obj,OplaxPullback.from_comma_obj_homl,to_comma_obj_left]
+    --       exact (Category.comp_id _).symm
+    --     wr := by
+    --       simp [Adjunction.homEquiv]
+    --       let cond := congr_arg (Gadj.unit.app o.middle ≫ ·) (congr_arg G.map (pushout.condition (f := Gb.map o.homl) (g := (Gadj.homEquiv _ _).invFun o.homr)))
+    --       simp [Adjunction.homEquiv] at cond
+    --       exact cond.symm
+    --   }
+    -- }
+    -- counit := {
+    --   app o := {
+    --     left := 𝟙 _
+    --     right := pushout.desc
+    --       (Gb.map o.hom ≫ Gadj.counit.app o.right)
+    --       (𝟙 _)
+    --       (by simp [Adjunction.homEquiv])
+    --     w := by
+    --       let eq : Gb.map (𝟙 (F.obj o.left)) ≫ Gb.map o.hom ≫ Gadj.counit.app o.right = (Gb.map o.hom ≫ Gadj.counit.app o.right) ≫ 𝟙 o.right := by simp
+    --       simp [Adjunction.homEquiv] -- TODO: -Functor.map_comp ?
+    --       rw [← Functor.map_comp]
+    --       simp [pushout.inl_desc _ _ eq]
+    --   }
+    --   naturality x y f := by
+    --     ext
+    --     . simp [to_comma,OplaxPullback.from_comma]
+    --     . simp [to_comma,OplaxPullback.from_comma,(·≫·),Adjunction.homEquiv,f.w,pushout.map]
+    --       sorry -- TODO: pushout.desc and composition?
+    -- }
     -- := Adjunction.CoreEtaInvertibleHom.mk
     --   {app o := {
     --     left := 𝟙 _

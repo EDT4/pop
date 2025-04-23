@@ -17,12 +17,19 @@ variable (R : B ⥤ C)
 def from_comma : Comma L R ⥤ OplaxPullback L R
   := liftL (Comma.fst L R) (Comma.snd L R) (Comma.natTrans L R)
 
+-- TODO: Consider removing these
 @[simps!]
 def from_flipped_comma : Comma R L ⥤ OplaxPullback L R
   := liftR (Comma.snd R L) (Comma.fst R L) (Comma.natTrans R L)
 
 def from_comma_flip         : from_comma         L R ⋙ OplaxPullback.flip = from_flipped_comma R L := rfl
 def from_flipped_comma_flip : from_flipped_comma L R ⋙ OplaxPullback.flip = from_comma         R L := rfl
+
+@[simp] def from_comma_projLeft  : from_comma L R ⋙ projLeft  L R = Comma.fst L R := rfl
+@[simp] def from_comma_projRight : from_comma L R ⋙ projRight L R = Comma.snd L R := rfl
+
+@[simp] def from_flipped_comma_projLeft  : from_flipped_comma L R ⋙ projLeft  L R = Comma.snd R L := rfl
+@[simp] def from_flipped_comma_projRight : from_flipped_comma L R ⋙ projRight L R = Comma.fst R L := rfl
 
 -- Partially-oplax pullback (on the left).
 -- `OplaxPullback`s where `homl` is an isomorphism.
@@ -186,6 +193,7 @@ namespace CommaLeft
 
 end CommaLeft
 
+-- TODO: Consider removing this
 -- Partially-oplax pullback (on the right).
 -- `OplaxPullback`s where `homr` is an isomorphism.
 def CommaRight : Set (OplaxPullback L R) := CommaLeft R L ∘ flip.obj
