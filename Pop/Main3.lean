@@ -16,7 +16,7 @@ import Pop.CategoryTheory.CommaExtras
 import Pop.CategoryTheory.Limits.OplaxPullback
 import Pop.CategoryTheory.Limits.Shapes.SeqColimit
 import Pop.CategoryTheory.OplaxPullback
-import Pop.CategoryTheory.OplaxPullback.CommaBySubcategory
+import Pop.CategoryTheory.OplaxPullback.CommaSubcategory
 import Pop.NatCategoryExtras
 import Pop.NatExtras
 
@@ -305,41 +305,21 @@ namespace Lemma2
     --   sorry
     --   sorry
 
-  noncomputable def OplaxPullback.to_flipped_comma : OplaxPullback F G ⥤ Comma G F
-    := OplaxPullback.flip ⋙ OplaxPullback.to_comma G F Fb Fadj
+  noncomputable def OplaxPullback.unprojLeft : A ⥤ OplaxPullback F G
+    := OplaxPullback.lift
+      (𝟭 _)
+      ((Functor.const _).obj (initial _))
+      ((Functor.const _).obj (initial _))
+      {app _ := initial.to _}
+      {app _ := initial.to _}
 
-  noncomputable def OplaxPullback.to_from_flipped_comma_adj : OplaxPullback.to_flipped_comma F G Fb Fadj ⊣ OplaxPullback.from_flipped_comma F G
-    := by
-      rw [← OplaxPullback.from_comma_flip]
-      exact Adjunction.comp OplaxPullback.flip_equiv.toAdjunction (OplaxPullback.to_from_comma_adj _ _ _ _)
-
-  noncomputable def OplaxPullback.unprojLeft : A ⥤ OplaxPullback F G where
-    obj x := {
-      left   := x
-      middle := initial C
-      right  := initial B
-      homl := initial.to _
-      homr := initial.to _
-    }
-    map f := {
-      left   := f
-      middle := 𝟙 _
-      right  := 𝟙 _
-    }
-
-  noncomputable def OplaxPullback.unprojRight : B ⥤ OplaxPullback F G where
-    obj x := {
-      left   := initial A
-      middle := initial C
-      right  := x
-      homl := initial.to _
-      homr := initial.to _
-    }
-    map f := {
-      left   := 𝟙 _
-      middle := 𝟙 _
-      right  := f
-    }
+  noncomputable def OplaxPullback.unprojRight : B ⥤ OplaxPullback F G
+    := OplaxPullback.lift
+      ((Functor.const _).obj (initial _))
+      (𝟭 _)
+      ((Functor.const _).obj (initial _))
+      {app _ := initial.to _}
+      {app _ := initial.to _}
 
   noncomputable def OplaxPullback.unleft_left_functor_adj : OplaxPullback.unprojLeft F G ⊣ OplaxPullback.projLeft F G := by
     dsimp only [unprojLeft,OplaxPullback.projLeft]
@@ -388,8 +368,18 @@ namespace Lemma2
   noncomputable def Pl.unincl : OplaxPullback F G ⥤ FullSubcategory (Pl F G)
     := OplaxPullback.to_comma F G Gb Gadj ⋙ OplaxPullback.CommaLeft.from_comma
 
+
+  -- noncomputable def OplaxPullback.to_flipped_comma : OplaxPullback F G ⥤ Comma G F
+  --   := OplaxPullback.flip ⋙ OplaxPullback.to_comma G F Fb Fadj
+  --
+  -- noncomputable def OplaxPullback.to_from_flipped_comma_adj : OplaxPullback.to_flipped_comma F G Fb Fadj ⊣ OplaxPullback.from_flipped_comma F G
+  --   := by
+  --     rw [← OplaxPullback.from_comma_flip]
+  --     exact Adjunction.comp OplaxPullback.flip_equiv.toAdjunction (OplaxPullback.to_from_comma_adj _ _ _ _)
+
+
   noncomputable def Pr.unincl : OplaxPullback F G ⥤ FullSubcategory (Pr F G)
-    := OplaxPullback.to_flipped_comma F G Fb Fadj ⋙ OplaxPullback.CommaRight.from_comma
+    := OplaxPullback.flip ⋙ OplaxPullback.to_comma G F Fb Fadj ⋙ OplaxPullback.CommaRight.from_comma
 
   noncomputable def Pl.unincl_incl_adj : Pl.unincl F G Gb Gadj ⊣ fullSubcategoryInclusion (Pl F G)
     := Adjunction.ofNatIsoRight
@@ -401,11 +391,18 @@ namespace Lemma2
 
   noncomputable def Pr.unincl_incl_adj : Pr.unincl F G Fb Fadj ⊣ fullSubcategoryInclusion (Pr F G)
     := Adjunction.ofNatIsoRight
-      (Adjunction.comp
-        (OplaxPullback.to_from_flipped_comma_adj F G Fb Fadj)
-        OplaxPullback.CommaRight.equiv_comma.symm.toAdjunction
+      (
+        let t :=
+          (Adjunction.comp
+            (Adjunction.comp
+              OplaxPullback.flipping.toAdjunction
+              (OplaxPullback.to_from_comma_adj G F Fb Fadj)
+            )
+            OplaxPullback.CommaRight.equiv_comma.symm.toAdjunction
+          )
+        t
       )
-      OplaxPullback.CommaRight.to_from_inclusion
+      (OplaxPullback.CommaRight.to_from_inclusion)
 
   local instance Pl.closed_iso : IsClosedUnderIsomorphisms (Pl F G)
     := CategoryTheory.natIso_isClosedUnderIso (OplaxPullback.llm F G)

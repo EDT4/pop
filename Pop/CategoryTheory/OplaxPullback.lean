@@ -82,11 +82,11 @@ section
     map f := f.right
 
   @[simps]
-  def llm : NatTrans (projMid L R) (projLeft L R ⋙ L) where
+  def llm : projMid L R ⟶ projLeft L R ⋙ L where
     app := homl
 
   @[simps]
-  def rrm : NatTrans (projMid L R) (projRight L R ⋙ R) where
+  def rrm : projMid L R ⟶ projRight L R ⋙ R where
     app := homr
 end
 
@@ -95,8 +95,8 @@ def lift
   (da : D ⥤ A)
   (db : D ⥤ B)
   (dc : D ⥤ C)
-  (pl : NatTrans dc (da ⋙ L))
-  (pr : NatTrans dc (db ⋙ R))
+  (pl : dc ⟶ da ⋙ L)
+  (pr : dc ⟶ db ⋙ R)
   : D ⥤ OplaxPullback L R
 where
   obj d := {
@@ -111,6 +111,68 @@ where
     middle := dc.map f
     right  := db.map f
   }
+
+section
+  variable {da : D ⥤ A}
+  variable {db : D ⥤ B}
+  variable {dc : D ⥤ C}
+  variable {pl : dc ⟶ (da ⋙ L)}
+  variable {pr : dc ⟶ (db ⋙ R)}
+  variable {F G : D ⥤ OplaxPullback L R}
+
+  @[simp] def lift_projLeft  : lift da db dc pl pr ⋙ projLeft  L R = da := by rfl;
+  @[simp] def lift_projMid   : lift da db dc pl pr ⋙ projMid   L R = dc := by rfl;
+  @[simp] def lift_projRight : lift da db dc pl pr ⋙ projRight L R = db := by rfl;
+  @[simp] def lift_proj      : lift (projLeft L R) (projRight L R) (projMid L R) (llm L R) (rrm L R) = 𝟭 _ := by rfl;
+
+  @[simps!]
+  def liftTrans
+    (tl : F ⋙ projLeft  L R ⟶ G ⋙ projLeft  L R)
+    (tm : F ⋙ projMid   L R ⟶ G ⋙ projMid   L R)
+    (tr : F ⋙ projRight L R ⟶ G ⋙ projRight L R)
+    (hl : whiskerLeft F (llm _ _) ≫ whiskerRight tl L = tm ≫ whiskerLeft G (llm _ _))
+    (hr : whiskerLeft F (rrm _ _) ≫ whiskerRight tr R = tm ≫ whiskerLeft G (rrm _ _))
+    : F ⟶ G where
+    app d := {
+      left   := tl.app d
+      middle := tm.app d
+      right  := tr.app d
+      wl := congrArg (fun f => f.app d) hl
+      wr := congrArg (fun f => f.app d) hr
+    }
+    naturality x y f := by
+      apply Hom.ext
+      . exact tl.naturality f
+      . exact tm.naturality f
+      . exact tr.naturality f
+
+  def lift_ext
+    (α β : F ⟶ G)
+    (hl : whiskerRight α (projLeft  L R) = whiskerRight β (projLeft  L R))
+    (hm : whiskerRight α (projMid   L R) = whiskerRight β (projMid   L R))
+    (hr : whiskerRight α (projRight L R) = whiskerRight β (projRight L R))
+    : α = β := by
+      ext d
+      apply Hom.ext
+      · let p := congrArg (fun f => f.app d) hl ; simp at p ; exact p
+      · let p := congrArg (fun f => f.app d) hm ; simp at p ; exact p
+      · let p := congrArg (fun f => f.app d) hr ; simp at p ; exact p
+
+  @[simps!]
+  def liftIso
+    (tl : F ⋙ projLeft  L R ≅ G ⋙ projLeft  L R)
+    (tm : F ⋙ projMid   L R ≅ G ⋙ projMid   L R)
+    (tr : F ⋙ projRight L R ≅ G ⋙ projRight L R)
+    (hll : whiskerLeft G (llm _ _) ≫ whiskerRight tl.inv L = tm.inv ≫ whiskerLeft F (llm _ _))
+    (hrl : whiskerLeft G (rrm _ _) ≫ whiskerRight tr.inv R = tm.inv ≫ whiskerLeft F (rrm _ _))
+    (hlr : whiskerLeft F (llm _ _) ≫ whiskerRight tl.hom L = tm.hom ≫ whiskerLeft G (llm _ _))
+    (hrr : whiskerLeft F (rrm _ _) ≫ whiskerRight tr.hom R = tm.hom ≫ whiskerLeft G (rrm _ _))
+    : F ≅ G where
+    hom := liftTrans tl.hom tm.hom tr.hom hlr hrr
+    inv := liftTrans tl.inv tm.inv tr.inv hll hrl
+    hom_inv_id := by apply lift_ext <;> simp [liftTrans,liftTrans,whiskerRight]
+    inv_hom_id := by apply lift_ext <;> simp [liftTrans,liftTrans,whiskerRight]
+end
 
 abbrev liftL (da : D ⥤ A) (db : D ⥤ B) (p : NatTrans (da ⋙ L) (db ⋙ R)) : D ⥤ OplaxPullback L R
   := lift da db (da ⋙ L) (NatTrans.id _) p
@@ -175,7 +237,7 @@ def flip_invol : flip ⋙ flip ≅ 𝟭 (OplaxPullback L R) where
 --   hom := flip
 --   inv := flip
 
-def flip_equiv : OplaxPullback L R ≌ OplaxPullback R L
+def flipping : OplaxPullback L R ≌ OplaxPullback R L
   := .mk flip flip flip_invol.symm flip_invol
 
 @[simp]
