@@ -1,8 +1,8 @@
 import Mathlib.CategoryTheory.Comma.Basic
 import Mathlib.CategoryTheory.Iso
-
 import Mathlib.CategoryTheory.Limits.Comma
 import Mathlib.CategoryTheory.Limits.FullSubcategory
+import Pop.CategoryTheory.CommaExtras
 
 namespace CategoryTheory
 
@@ -62,7 +62,7 @@ namespace IsoComma
       obj x := x.right
       map f := f.right
 
-    @[simps!]
+    @[simps]
     def natIso : (projLeft L R ⋙ L) ≅ (projRight L R ⋙ R) where
       hom := {app o := o.iso.hom}
       inv := {app o := o.iso.inv}
@@ -87,49 +87,39 @@ namespace IsoComma
       winv  := p.inv.naturality _
     }
 
-  @[simps]
-  def flip : IsoComma L R ⥤ IsoComma R L where
-    obj o := {
-      left   := o.right
-      right  := o.left
-      iso    := o.iso.symm
-    }
-    map f := {
-      left   := f.right
-      right  := f.left
-    }
+  @[simps!]
+  def flip : IsoComma L R ⥤ IsoComma R L
+    := lift (projRight L R) (projLeft L R) (natIso L R).symm
 
-  @[simps]
-  def rightComma : IsoComma L R ⥤ Comma L R where
-    obj o := {
-      left  := o.left
-      right := o.right
-      hom   := o.iso.hom
-    }
-    map f := {
-      left  := f.left
-      right := f.right
-      w     := f.whom
-    }
+  @[simps!]
+  def leftComma : IsoComma L R ⥤ Comma R L
+    := Comma.lift (projRight L R) (projLeft L R) (natIso L R).inv
 
-  @[simps]
-  def leftComma : IsoComma L R ⥤ Comma R L where
-    obj o := {
-      left  := o.right
-      right := o.left
-      hom   := o.iso.inv
-    }
-    map f := {
-      left  := f.right
-      right := f.left
-      w     := f.winv
-    }
+  @[simps!]
+  def rightComma : IsoComma L R ⥤ Comma L R
+    := Comma.lift (projLeft L R) (projRight L R) (natIso L R).hom
+
+  variable {da : D ⥤ A}
+  variable {db : D ⥤ B}
+  variable {dp : (da ⋙ L) ≅ (db ⋙ R)}
+
+  @[simp] lemma lift_projLeft  : lift da db dp ⋙ projLeft  L R = da := rfl
+  @[simp] lemma lift_projRight : lift da db dp ⋙ projRight L R = db := rfl
+
+  @[simp] lemma flip_projLeft  : flip ⋙ projLeft  L R = projRight R L := rfl
+  @[simp] lemma flip_projRight : flip ⋙ projRight L R = projLeft  R L := rfl
+
+  @[simp] lemma leftComma_projLeft  : leftComma ⋙ Comma.fst L R = projRight R L := rfl
+  @[simp] lemma leftComma_projRight : leftComma ⋙ Comma.snd L R = projLeft  R L := rfl
+
+  @[simp] lemma rightComma_projLeft  : rightComma ⋙ Comma.fst L R = projLeft  L R := rfl
+  @[simp] lemma rightComma_projRight : rightComma ⋙ Comma.snd L R = projRight L R := rfl
 
   def flip_invol : flip ⋙ flip ≅ 𝟭 (IsoComma L R) where
     hom := 𝟙 _
     inv := 𝟙 _
 
-  def flip_equiv : IsoComma L R ≌ IsoComma R L
+  def flipping : IsoComma L R ≌ IsoComma R L
     := .mk flip flip flip_invol.symm flip_invol
 
   section
@@ -153,8 +143,8 @@ namespace IsoComma
       apply IsIso.eq_inv_of_hom_inv_id
       rw [← category_comp_right, IsIso.hom_inv_id, category_id_right]
 
-    def flip_leftComma  : flip ⋙ leftComma  = rightComma (L := L) (R := R) := rfl
-    def flip_rightComma : flip ⋙ rightComma = leftComma  (L := L) (R := R) := rfl
+    @[simp] lemma flip_leftComma  : flip ⋙ leftComma  = rightComma (L := L) (R := R) := rfl
+    @[simp] lemma flip_rightComma : flip ⋙ rightComma = leftComma  (L := L) (R := R) := rfl
   end
 end IsoComma
 

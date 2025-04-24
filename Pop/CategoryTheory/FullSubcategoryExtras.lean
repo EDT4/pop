@@ -24,3 +24,13 @@ def liftIso
   inv := liftTrans _ p.inv
   hom_inv_id := by ext d ; exact congrArg (fun p => p.app d) p.hom_inv_id
   inv_hom_id := by ext d ; exact congrArg (fun p => p.app d) p.inv_hom_id
+
+variable {A : Type _} [Category A]
+variable {B : Type _} [Category B]
+
+def lift_comp
+  (F : A ⥤ B)
+  (G : B ⥤ C)
+  (p : ∀b, P (G.obj b))
+  : FullSubcategory.lift P (F ⋙ G) (p ∘' F.obj) = F ⋙ FullSubcategory.lift P G p
+  := rfl

@@ -15,7 +15,7 @@ variable {db : D ⥤ B}
 variable {dp : (da ⋙ L) ⟶ (db ⋙ R)}
 variable {F G : D ⥤ Comma L R}
 
-@[simps!]
+@[simps]
 def lift
   (da : D ⥤ A)
   (db : D ⥤ B)

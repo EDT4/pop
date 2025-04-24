@@ -1,4 +1,6 @@
 import Mathlib.CategoryTheory.Comma.Basic
+import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
+import Pop.CategoryExtras
 import Pop.CategoryTheory.CommaExtras
 import Pop.CategoryTheory.FullSubcategoryExtras
 import Pop.CategoryTheory.OplaxPullback
@@ -7,6 +9,7 @@ import Pop.CategoryTheory.OplaxPullback.Comma
 namespace CategoryTheory.OplaxPullback
 
 open CategoryTheory
+open CategoryTheory.ObjectProperty
 
 variable {A : Type _} [Category A]
 variable {B : Type _} [Category B]
@@ -92,6 +95,8 @@ namespace CommaLeft
       to_from_inverse.symm
       from_to_inverse
 
+  instance closed_iso : IsClosedUnderIsomorphisms (CommaLeft L R)
+    := natIso_isClosedUnderIso (OplaxPullback.llm L R)
 end CommaLeft
 
 -- Partially-oplax pullback (on the right).
@@ -163,4 +168,6 @@ namespace CommaRight
   noncomputable def equiv_comma : FullSubcategory (CommaRight L R) ≌ Comma R L
     := Equivalence.mk to_comma from_comma to_from_inverse.symm from_to_inverse
 
+  instance closed_iso : IsClosedUnderIsomorphisms (CommaRight L R)
+    := natIso_isClosedUnderIso (OplaxPullback.rrm L R)
 end CommaRight

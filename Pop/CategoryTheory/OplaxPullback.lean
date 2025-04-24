@@ -93,8 +93,8 @@ end
 @[simps]
 def lift
   (da : D ⥤ A)
-  (db : D ⥤ B)
   (dc : D ⥤ C)
+  (db : D ⥤ B)
   (pl : dc ⟶ da ⋙ L)
   (pr : dc ⟶ db ⋙ R)
   : D ⥤ OplaxPullback L R
@@ -120,18 +120,19 @@ section
   variable {pr : dc ⟶ (db ⋙ R)}
   variable {F G : D ⥤ OplaxPullback L R}
 
-  @[simp] def lift_projLeft  : lift da db dc pl pr ⋙ projLeft  L R = da := by rfl;
-  @[simp] def lift_projMid   : lift da db dc pl pr ⋙ projMid   L R = dc := by rfl;
-  @[simp] def lift_projRight : lift da db dc pl pr ⋙ projRight L R = db := by rfl;
-  @[simp] def lift_proj      : lift (projLeft L R) (projRight L R) (projMid L R) (llm L R) (rrm L R) = 𝟭 _ := by rfl;
+  -- TODO: Is it possible to generate these?
+  @[simp] def lift_projLeft  : lift da dc db pl pr ⋙ projLeft  L R = da := by rfl;
+  @[simp] def lift_projMid   : lift da dc db pl pr ⋙ projMid   L R = dc := by rfl;
+  @[simp] def lift_projRight : lift da dc db pl pr ⋙ projRight L R = db := by rfl;
+  @[simp] def lift_proj      : lift (projLeft L R) (projMid L R) (projRight L R) (llm L R) (rrm L R) = 𝟭 _ := by rfl;
 
   @[simps!]
   def liftTrans
     (tl : F ⋙ projLeft  L R ⟶ G ⋙ projLeft  L R)
     (tm : F ⋙ projMid   L R ⟶ G ⋙ projMid   L R)
     (tr : F ⋙ projRight L R ⟶ G ⋙ projRight L R)
-    (hl : whiskerLeft F (llm _ _) ≫ whiskerRight tl L = tm ≫ whiskerLeft G (llm _ _))
-    (hr : whiskerLeft F (rrm _ _) ≫ whiskerRight tr R = tm ≫ whiskerLeft G (rrm _ _))
+    (hl : whiskerLeft F (llm _ _) ≫ whiskerRight tl L = tm ≫ whiskerLeft G (llm _ _) := by aesop)
+    (hr : whiskerLeft F (rrm _ _) ≫ whiskerRight tr R = tm ≫ whiskerLeft G (rrm _ _) := by aesop)
     : F ⟶ G where
     app d := {
       left   := tl.app d
@@ -163,10 +164,10 @@ section
     (tl : F ⋙ projLeft  L R ≅ G ⋙ projLeft  L R)
     (tm : F ⋙ projMid   L R ≅ G ⋙ projMid   L R)
     (tr : F ⋙ projRight L R ≅ G ⋙ projRight L R)
-    (hll : whiskerLeft G (llm _ _) ≫ whiskerRight tl.inv L = tm.inv ≫ whiskerLeft F (llm _ _))
-    (hrl : whiskerLeft G (rrm _ _) ≫ whiskerRight tr.inv R = tm.inv ≫ whiskerLeft F (rrm _ _))
-    (hlr : whiskerLeft F (llm _ _) ≫ whiskerRight tl.hom L = tm.hom ≫ whiskerLeft G (llm _ _))
-    (hrr : whiskerLeft F (rrm _ _) ≫ whiskerRight tr.hom R = tm.hom ≫ whiskerLeft G (rrm _ _))
+    (hll : whiskerLeft G (llm _ _) ≫ whiskerRight tl.inv L = tm.inv ≫ whiskerLeft F (llm _ _) := by aesop)
+    (hrl : whiskerLeft G (rrm _ _) ≫ whiskerRight tr.inv R = tm.inv ≫ whiskerLeft F (rrm _ _) := by aesop)
+    (hlr : whiskerLeft F (llm _ _) ≫ whiskerRight tl.hom L = tm.hom ≫ whiskerLeft G (llm _ _) := by aesop)
+    (hrr : whiskerLeft F (rrm _ _) ≫ whiskerRight tr.hom R = tm.hom ≫ whiskerLeft G (rrm _ _) := by aesop)
     : F ≅ G where
     hom := liftTrans tl.hom tm.hom tr.hom hlr hrr
     inv := liftTrans tl.inv tm.inv tr.inv hll hrl
@@ -175,34 +176,22 @@ section
 end
 
 abbrev liftL (da : D ⥤ A) (db : D ⥤ B) (p : NatTrans (da ⋙ L) (db ⋙ R)) : D ⥤ OplaxPullback L R
-  := lift da db (da ⋙ L) (NatTrans.id _) p
+  := lift da (da ⋙ L) db (NatTrans.id _) p
 
 abbrev liftR (da : D ⥤ A) (db : D ⥤ B) (p : NatTrans (db ⋙ R) (da ⋙ L)) : D ⥤ OplaxPullback L R
-  := lift da db (db ⋙ R) p (NatTrans.id _)
+  := lift da (db ⋙ R) db p (NatTrans.id _)
 
--- Alternative definition: lift (projRight _ _) (projLeft _ _) (projMid _ _) (rrm _ _) (llm _ _)
-@[simps]
-def flip : OplaxPullback L R ⥤ OplaxPullback R L where
-  obj o := {
-    left   := o.right
-    middle := o.middle
-    right  := o.left
-    homl   := o.homr
-    homr   := o.homl
-  }
-  map f := {
-    left   := f.right
-    middle := f.middle
-    right  := f.left
-  }
+@[simps!]
+def flip : OplaxPullback L R ⥤ OplaxPullback R L
+  := lift (projRight _ _) (projMid _ _) (projLeft _ _) (rrm _ _) (llm _ _)
 
 section
   variable {P₁ P₂ : OplaxPullback L R}
   variable (f : P₁ ⟶ P₂)
 
-  instance [IsIso f] : IsIso f.left   := (projLeft   L R).map_isIso f
-  instance [IsIso f] : IsIso f.middle := (projMid L R).map_isIso f
-  instance [IsIso f] : IsIso f.right  := (projRight  L R).map_isIso f
+  instance [IsIso f] : IsIso f.left   := (projLeft  L R).map_isIso f
+  instance [IsIso f] : IsIso f.middle := (projMid   L R).map_isIso f
+  instance [IsIso f] : IsIso f.right  := (projRight L R).map_isIso f
 end
 
 variable {x y z: OplaxPullback L R}
@@ -221,21 +210,20 @@ lemma hom_ext
 
 -- The fields preserve isomorphisms.
 section
-  @[simps!] def leftIso   : x.left   ≅ y.left   := (projLeft   L R).mapIso i
-  @[simps!] def middleIso : x.middle ≅ y.middle := (projMid L R).mapIso i
-  @[simps!] def rightIso  : x.right  ≅ y.right  := (projRight  L R).mapIso i
+  @[simps!] def leftIso   : x.left   ≅ y.left   := (projLeft  L R).mapIso i
+  @[simps!] def middleIso : x.middle ≅ y.middle := (projMid   L R).mapIso i
+  @[simps!] def rightIso  : x.right  ≅ y.right  := (projRight L R).mapIso i
 end
+
+@[simp] def flip_projLeft  : flip ⋙ projLeft  L R = projRight R L := by rfl;
+@[simp] def flip_projMid   : flip ⋙ projMid   L R = projMid   R L := by rfl;
+@[simp] def flip_projRight : flip ⋙ projRight L R = projLeft  R L := by rfl;
 
 def flip_obj_invol {x : OplaxPullback L R} : flip.obj (flip.obj x) = x := rfl
 
 def flip_invol : flip ⋙ flip ≅ 𝟭 (OplaxPullback L R) where
   hom := 𝟙 _
   inv := 𝟙 _
-
--- TODO: The strict variant also holds, but is it necessary?
--- def flip_iso : Cat.of (OplaxPullback L R) ≅ Cat.of (OplaxPullback R L) where
---   hom := flip
---   inv := flip
 
 def flipping : OplaxPullback L R ≌ OplaxPullback R L
   := .mk flip flip flip_invol.symm flip_invol
