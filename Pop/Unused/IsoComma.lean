@@ -115,9 +115,7 @@ namespace IsoComma
   @[simp] lemma rightComma_projLeft  : rightComma ⋙ Comma.fst L R = projLeft  L R := rfl
   @[simp] lemma rightComma_projRight : rightComma ⋙ Comma.snd L R = projRight L R := rfl
 
-  def flip_invol : flip ⋙ flip ≅ 𝟭 (IsoComma L R) where
-    hom := 𝟙 _
-    inv := 𝟙 _
+  def flip_invol : flip ⋙ flip ≅ 𝟭 (IsoComma L R) := Iso.refl _
 
   def flipping : IsoComma L R ≌ IsoComma R L
     := .mk flip flip flip_invol.symm flip_invol

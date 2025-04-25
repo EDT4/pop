@@ -33,9 +33,10 @@ where
     w  := dp.naturality _
   }
 
-@[simp] def lift_fst : lift da db dp ⋙ fst L R = da := by rfl;
-@[simp] def lift_snd : lift da db dp ⋙ snd L R = db := by rfl;
-@[simp] def lift_fst_snd : lift (fst L R) (snd L R) (natTrans L R) = 𝟭 _ := by rfl;
+@[simp] def lift_fst : lift da db dp ⋙ fst L R = da := rfl
+@[simp] def lift_snd : lift da db dp ⋙ snd L R = db := rfl
+@[simp] def lift_fst_snd : lift (fst L R) (snd L R) (natTrans L R) = 𝟭 _ := rfl
+@[simp] def lift_natTrans : whiskerLeft (lift da db dp) (natTrans L R) = dp := rfl
 
 @[simps!]
 def liftTrans

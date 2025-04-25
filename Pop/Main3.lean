@@ -46,6 +46,7 @@ variable [cib : IsClosedUnderIsomorphisms B]
 omit [_]
 
 -- TODO: Rename stuff when the proof is finished
+-- CategoryTheory.Limits.pointwiseCocone
 namespace IntersectionReflective
   def sequence : Limits.Seq (C ⥤ C) :=
     let TA := adj_a.toMonad
@@ -137,22 +138,103 @@ namespace Lemma2
   abbrev Plr.left  : FullSubcategory (Plr L R) ⥤ A := fullSubcategoryInclusion _ ⋙ OplaxPullback.projLeft _ _
   abbrev Plr.right : FullSubcategory (Plr L R) ⥤ B := fullSubcategoryInclusion _ ⋙ OplaxPullback.projRight _ _
 
-  def Pl.closed_seqColim [pf : PreservesColimitsOfShape J L] : ClosedUnderColimitsOfShape J (Pl L R) := by
+  def test
+    (P : Set A)
+    (F : A ⥤ B)
+    (iso : B ≅ FullSubcategory P)
+    (pres : PreservesColimitsOfShape J F)
+    : ClosedUnderColimitsOfShape J P
+    := by
+      intro j c l p
+      let t := (pres.preservesColimit (K := j)).preserves (c := c) l
+      sorry
+
+  def test'
+    (P : Set A)
+    [ciso : IsClosedUnderIsomorphisms P]
+    (F : A ⥤ FullSubcategory P)
+    (pres : PreservesColimitsOfShape J F)
+    : ClosedUnderColimitsOfShape J P
+    := fun j c col p =>
+      let t := ((pres.preservesColimit (K := j)).preserves (c := c) col).some
+      let test := IsColimit.coconePointsIsoOfNatIso
+        (s := sorry)
+        (t := c)
+        (F := j ⋙ F ⋙ fullSubcategoryInclusion P)
+        (G := j)
+        sorry -- (isColimitOfPreserves F (colimit.isColimit _))
+        col
+        sorry
+      IsClosedUnderIsomorphisms.of_iso test sorry
+    -- := closedUnderColimitsOfShape_of_colimit $ by
+    --   intro j c p
+    --   let iso := preservesColimitIso F j
+    --   let inst : PreservesColimit j (F ⋙ fullSubcategoryInclusion P) := sorry
+    --   -- let test := (preservesColimitIso (F ⋙ fullSubcategoryInclusion P) j).inv
+    --   -- simp [fullSubcategoryInclusion.obj] at test
+    --   -- let test2 := F.map
+    --   let test := FullSubcategory.lift_comp_inclusion P sorry sorry
+    --   sorry
+    -- := by
+    --   intro j c l p
+    --   let t := Classical.choice ((pres.preservesColimit (K := j)).preserves (c := c) l)
+    --   let u := t.desc
+    --   let test' := isColimitOfPreserves F
+    --   sorry
+
+  def Pl.closed_seqColim
+    [pf : PreservesColimitsOfShape J L]
+    : ClosedUnderColimitsOfShape J (Pl L R)
+    := by
+      intro F cf iscf p
+
+      let P := FullSubcategory.lift (Pl L R) F p
+
+      let coconePrecompose_mll
+        (c : Cocone (P ⋙ fullSubcategoryInclusion _ ⋙ OplaxPullback.projLeft L R))
+        : Cocone (P ⋙ fullSubcategoryInclusion _ ⋙ OplaxPullback.projMid L R)
+        := (Cocones.precompose (whiskerLeft P (OplaxPullback.CommaLeft.mll L R))).obj (L.mapCocone c)
+
+      exact ⟨sorry , sorry⟩
+      -- unfold Pl OplaxPullback.CommaLeft
+      -- exact ⟨L.map ((OplaxPullback.projLeft L R).map sorry) ≫ sorry ≫ (OplaxPullback.projMid L R).map ((Cocone.ι cf).app sorry) , sorry⟩
+
+      -- unfold Pl OplaxPullback.CommaLeft
+      -- let cp : Cocone P := {
+      --   pt := {
+      --     obj := cf.pt
+      --     property := ⟨L.map sorry ≫ sorry , sorry⟩
+      --   }
+      --   ι := FullSubcategory.liftTrans (Pl L R) sorry
+      -- }
+      -- let iscp : IsColimit cp := sorry
+      -- let tmp := cp.pt.property
+      -- let o : FullSubcategory (Pl L R) := {
+      --   obj := cf.pt
+      --   property := sorry
+      -- }
+
+      -- let test : HasColimit (F ⋙ OplaxPullback.projLeft L R) := sorry
+      -- let te := preservesColimitIso L (F ⋙ OplaxPullback.projLeft L R)
+
+    -- let t := ClosedUnderColimitsOfShape.essImage L
+    -- test' (ciso := OplaxPullback.CommaLeft.closed_iso) (Pl L R) sorry sorry
+
     -- let _ := Pl.closed_iso L R
     -- apply closedUnderColimitsOfShape_of_colimit
     -- intro H h p
     -- let pp := pf.preservesColimit (K := H ⋙ OplaxPullback.projLeft _ _).preserves (c := (OplaxPullback.projLeft L R).mapCocone (getColimitCocone H).cocone) sorry
     -- sorry
 
-    intro H c isc p
-    let pp := pf.preservesColimit (K := H ⋙ OplaxPullback.projLeft _ _).preserves (c := (OplaxPullback.projLeft L R).mapCocone c) sorry
-    -- simp [Pl,OplaxPullback.CommaLeft]
-    -- let test := ClosedUnderColimitsOfShape.essImage sorry
-    let t := c.ι.naturality
-    dsimp at t
-    dsimp [Pl,OplaxPullback.CommaLeft]
-    dsimp [Pl,OplaxPullback.CommaLeft] at p
-    sorry
+    --intro H c isc p
+    --let pp := pf.preservesColimit (K := H ⋙ OplaxPullback.projLeft _ _).preserves (c := (OplaxPullback.projLeft L R).mapCocone c) sorry
+    ---- simp [Pl,OplaxPullback.CommaLeft]
+    ---- let test := ClosedUnderColimitsOfShape.essImage sorry
+    --let t := c.ι.naturality
+    --dsimp at t
+    --dsimp [Pl,OplaxPullback.CommaLeft]
+    --dsimp [Pl,OplaxPullback.CommaLeft] at p
+    --sorry
 
   def Pr.closed_seqColim [pg : PreservesColimitsOfShape J R] : ClosedUnderColimitsOfShape J (Pr L R) := sorry
 

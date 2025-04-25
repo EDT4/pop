@@ -29,9 +29,9 @@ def coconePrecompose_rrm
 
 @[simps]
 def cocone
-  (cl : Cocone (F ⋙ projLeft   L R))
-  {cm : Cocone (F ⋙ projMid L R)} (tm : IsColimit cm)
-  (cr : Cocone (F ⋙ projRight  L R))
+  (cl : Cocone (F ⋙ projLeft  L R))
+  {cm : Cocone (F ⋙ projMid   L R)} (tm : IsColimit cm)
+  (cr : Cocone (F ⋙ projRight L R))
   : Cocone F
   where
   pt := {
@@ -56,15 +56,15 @@ def cocone
 
 @[simps]
 def isColimit
-  {cl : Cocone (F ⋙ projLeft   L R)} (tl : IsColimit cl)
-  {cm : Cocone (F ⋙ projMid L R)} (tm : IsColimit cm)
-  {cr : Cocone (F ⋙ projRight  L R)} (tr : IsColimit cr)
+  {cl : Cocone (F ⋙ projLeft  L R)} (tl : IsColimit cl)
+  {cm : Cocone (F ⋙ projMid   L R)} (tm : IsColimit cm)
+  {cr : Cocone (F ⋙ projRight L R)} (tr : IsColimit cr)
   : IsColimit (cocone F cl tm cr)
   where
   desc s := {
-    left   := tl.desc ((projLeft   L R).mapCocone s)
-    middle := tm.desc ((projMid L R).mapCocone s)
-    right  := tr.desc ((projRight  L R).mapCocone s)
+    left   := tl.desc ((projLeft  L R).mapCocone s)
+    middle := tm.desc ((projMid   L R).mapCocone s)
+    right  := tr.desc ((projRight L R).mapCocone s)
     wl := tm.hom_ext fun j => by
       rewrite [
         cocone_pt_homl,tm.fac_assoc,coconePrecompose_llm_ι_app,Category.assoc,← L.map_comp,tl.fac,(projLeft L R).mapCocone_ι_app,projLeft_map,
@@ -80,14 +80,14 @@ def isColimit
   }
   uniq s m w := by
     ext
-    . exact tl.uniq ((projLeft   L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.left   (w j))
-    . exact tm.uniq ((projMid L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.middle (w j))
-    . exact tr.uniq ((projRight  L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.right  (w j))
+    . exact tl.uniq ((projLeft  L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.left   (w j))
+    . exact tm.uniq ((projMid   L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.middle (w j))
+    . exact tr.uniq ((projRight L R).mapCocone s) _ (fun j => by exact congr_arg OplaxPullback.Hom.right  (w j))
 
 instance hasColimit
-  [hl : HasColimit (F ⋙ projLeft   L R)]
-  [hm : HasColimit (F ⋙ projMid L R)]
-  [hr : HasColimit (F ⋙ projRight  L R)]
+  [hl : HasColimit (F ⋙ projLeft  L R)]
+  [hm : HasColimit (F ⋙ projMid   L R)]
+  [hr : HasColimit (F ⋙ projRight L R)]
   : HasColimit F
   := HasColimit.mk ⟨_,isColimit _ (colimit.isColimit _) (colimit.isColimit _) (colimit.isColimit _)⟩
 

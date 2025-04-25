@@ -120,11 +120,13 @@ section
   variable {pr : dc ⟶ (db ⋙ R)}
   variable {F G : D ⥤ OplaxPullback L R}
 
-  -- TODO: Is it possible to generate these?
-  @[simp] def lift_projLeft  : lift da dc db pl pr ⋙ projLeft  L R = da := by rfl;
-  @[simp] def lift_projMid   : lift da dc db pl pr ⋙ projMid   L R = dc := by rfl;
-  @[simp] def lift_projRight : lift da dc db pl pr ⋙ projRight L R = db := by rfl;
-  @[simp] def lift_proj      : lift (projLeft L R) (projMid L R) (projRight L R) (llm L R) (rrm L R) = 𝟭 _ := by rfl;
+  -- TODO: Would be nice to just generate these
+  @[simp] def lift_projLeft  : lift da dc db pl pr ⋙ projLeft  L R = da := rfl
+  @[simp] def lift_projMid   : lift da dc db pl pr ⋙ projMid   L R = dc := rfl
+  @[simp] def lift_projRight : lift da dc db pl pr ⋙ projRight L R = db := rfl
+  @[simp] def lift_proj      : lift (projLeft L R) (projMid L R) (projRight L R) (llm L R) (rrm L R) = 𝟭 _ := rfl
+  @[simp] def lift_llm       : whiskerLeft (lift da dc db pl pr) (llm L R) = pl := rfl
+  @[simp] def lift_rrm       : whiskerLeft (lift da dc db pl pr) (rrm L R) = pr := rfl
 
   @[simps!]
   def liftTrans
@@ -147,7 +149,7 @@ section
       . exact tm.naturality f
       . exact tr.naturality f
 
-  def lift_ext
+  lemma lift_ext
     (α β : F ⟶ G)
     (hl : whiskerRight α (projLeft  L R) = whiskerRight β (projLeft  L R))
     (hm : whiskerRight α (projMid   L R) = whiskerRight β (projMid   L R))
@@ -215,9 +217,9 @@ section
   @[simps!] def rightIso  : x.right  ≅ y.right  := (projRight L R).mapIso i
 end
 
-@[simp] def flip_projLeft  : flip ⋙ projLeft  L R = projRight R L := by rfl;
-@[simp] def flip_projMid   : flip ⋙ projMid   L R = projMid   R L := by rfl;
-@[simp] def flip_projRight : flip ⋙ projRight L R = projLeft  R L := by rfl;
+@[simp] lemma flip_projLeft  : flip ⋙ projLeft  L R = projRight R L := lift_projLeft
+@[simp] lemma flip_projMid   : flip ⋙ projMid   L R = projMid   R L := lift_projMid
+@[simp] lemma flip_projRight : flip ⋙ projRight L R = projLeft  R L := lift_projRight
 
 def flip_obj_invol {x : OplaxPullback L R} : flip.obj (flip.obj x) = x := rfl
 

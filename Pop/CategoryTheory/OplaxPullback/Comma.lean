@@ -19,3 +19,5 @@ def from_comma : Comma L R ⥤ OplaxPullback L R
 
 @[simp] def from_comma_projLeft  : from_comma L R ⋙ projLeft  L R = Comma.fst L R := rfl
 @[simp] def from_comma_projRight : from_comma L R ⋙ projRight L R = Comma.snd L R := rfl
+@[simp ]def from_comma_llm : whiskerLeft (from_comma L R) (llm L R) = NatTrans.id _ := rfl
+@[simp] def from_comma_rrm : whiskerLeft (from_comma L R) (rrm L R) = Comma.natTrans L R := rfl
